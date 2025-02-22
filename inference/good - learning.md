@@ -1,0 +1,2 @@
+- cuda等笔记
+-[x] cuda & FastTransformer & softmax large-language-model-note and so on   https://github.com/BBuf/how-to-optim-algorithm-in-cuda/tree/master/cuda-mode
