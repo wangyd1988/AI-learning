@@ -1,4 +1,8 @@
 - cuda等笔记
--[x] cuda & FastTransformer & softmax large-language-model-note and so on 	  https://github.com/BBuf/how-to-optim-algorithm-in-cuda/tree/master/cuda-mode
+- [x] cuda & FastTransformer & softmax large-language-model-note and so on 	  https://github.com/BBuf/how-to-optim-algorithm-in-cuda/tree/master/cuda-mode
 - 从零开始认识大语言模型(LLM)
--[x] https://zhuanlan.zhihu.com/p/664321892
+- [x] https://zhuanlan.zhihu.com/p/664321892
+- GPU软硬件基本知识（ppt&视频等）
+- [x] https://github.com/chenzomi12/AISystem/tree/main/02Hardware/03GPUBase
+- golang大佬学习笔记
+- [x] [zhaochenyang20 / Awesome-ML-SYS-Tutorial](https://github.com/zhaochenyang20/Awesome-ML-SYS-Tutorial)
