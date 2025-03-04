@@ -8,3 +8,6 @@
 - [x] [zhaochenyang20 / Awesome-ML-SYS-Tutorial](https://github.com/zhaochenyang20/Awesome-ML-SYS-Tutorial)
 - 学习vllm等
 - [x] https://github.com/wdndev/llm_interview_note
+- 大模型Agent 实战
+- [x] https://pan.baidu.com/s/1M9dOHLRVhD7RexfeKRpBJQ 提取码: 4g94
+- [x] https://pan.baidu.com/s/17vt_tt4nSjdt0_HosAaFKw?pwd=e97i   
