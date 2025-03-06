@@ -12,3 +12,5 @@
 - 大模型Agent 实战
 - [x] https://pan.baidu.com/s/1M9dOHLRVhD7RexfeKRpBJQ 提取码: 4g94
 - [x] https://pan.baidu.com/s/17vt_tt4nSjdt0_HosAaFKw?pwd=e97i   
+- 机器学习
+- [x] https://openmlsys.github.io/chapter_distributed_training/collective.html
