@@ -4,7 +4,9 @@
 - [x] https://zhuanlan.zhihu.com/p/664321892
 - GPU软硬件基本知识（ppt&视频等）
 - [x] https://github.com/chenzomi12/AISystem/tree/main/02Hardware/03GPUBase
-- [x] https://github.com/chenzomi12/AIInfra 
+- [x] https://github.com/chenzomi12/AIInfra
+- [x] book
+- [x] ![image] https://github.com/wangyd1988/AI-learning/blob/main/images/AI%E7%B3%BB%E7%BB%9F%E5%8E%9F%E7%90%86%E4%B8%8E%E6%9E%B6%E6%9E%84-0.png  
 - golang大佬学习笔记
 - [x] [zhaochenyang20 / Awesome-ML-SYS-Tutorial](https://github.com/zhaochenyang20/Awesome-ML-SYS-Tutorial)
 - 学习vllm等
