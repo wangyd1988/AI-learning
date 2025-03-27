@@ -27,3 +27,7 @@
 - [x] https://zhuanlan.zhihu.com/p/31160183506
 - [x] https://zhuanlan.zhihu.com/p/18285771025
 - [x] https://zhuanlan.zhihu.com/p/31160183506  
+
+- cursor
+- [x] https://github.com/yuaotian/go-cursor-help
+- [x]  https://github.com/chengazhen/cursor-auto-free/issues/279
