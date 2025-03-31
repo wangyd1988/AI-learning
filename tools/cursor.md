@@ -1,0 +1,4 @@
+- 使用说明
+- [x] https://aicoding.csdn.net/678c8c0e59bcf8384aa7af4f.html
+- https://github.com/chengazhen/cursor-auto-free
+- https://github.com/chengazhen/cursor-auto-free/issues/279
