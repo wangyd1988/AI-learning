@@ -32,3 +32,6 @@
 - [x] https://github.com/yuaotian/go-cursor-help
 - [x]  https://github.com/chengazhen/cursor-auto-free/issues/279
 - [X] https://cursor-auto-free-doc.vercel.app/zh/quick-start.html
+
+- vllm中文文档
+- [x] https://vllm.hyper.ai/docs/models/engine-arguments
