@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/weixin_42479327/article/details/141614205" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      vllm源码解析(二)：调度策略分析_vllm 0.6调度逻辑-CSDN博客
+     </title>
+     <meta content="vllm 0.6调度逻辑" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"vllm 0.6调度逻辑"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读2.6k次，点赞21次，收藏36次。你有没有遇到过这种情况，某天，你老板（**调度**）来到你面前，跟你（**running**）说，亲，你的工作饱和吗（**最大吞吐量**），要不要给你再来点？我想你肯定没遇到过。真实的情况是，老板会直接把工作甩你脸上，工作不饱和你就干吧，没时间干（**gpu资源不足或处理数量超出阈值**）就先积压起来（watiing or swapped），有时间再搞。_vllm 0.6调度逻辑" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-850e130245.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-whitemove/skin-whitemove-2af9149bdc.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            vllm源码解析(二)：调度策略分析
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/weixin_42479327" rel="noopener" target="_blank" title="弈秋001">
+              弈秋001
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUpTime2.png"/>
+             <span class="time">
+              已于 2024-09-03 23:26:42 修改
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量2.6k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                36
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            21
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"transformer","ab":"new","extra":"{\"searchword\":\"transformer\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"transformer","ab":"new","extra":"{\"searchword\":\"transformer\"}"}' href="https://so.csdn.net/so/search/s.do?q=transformer&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              transformer
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' href="https://so.csdn.net/so/search/s.do?q=chatgpt&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              chatgpt
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' href="https://so.csdn.net/so/search/s.do?q=gpt-3&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              gpt-3
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+            </div>
+           </div>
+           <div class="up-time">
+            <span>
+             于 2024-09-03 23:25:17 首次发布
+            </span>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/weixin_42479327/article/details/141614205" target="_blank">
+               https://blog.csdn.net/weixin_42479327/article/details/141614205
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-light" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <h2>
+            <a id="_vllm_0">
+            </a>
+            五 vllm调度逻辑
+           </h2>
+           <p>
+            前面分享的知识确实遗漏了许多细节，不过不影响我们接下来的讲解，我们在
+            <strong>
+             第一篇文章
+            </strong>
+            中已经详细讲解过三个队列用途，不熟悉的同学可以回看。
+           </p>
+           <p>
+            本章涉及到的流程图已上传github:
+            <br/>
+            <a href="https://github.com/yblir/packages/blob/main/vllm.vsdx">
+             https://github.com/yblir/packages/blob/main/vllm.vsdx
+            </a>
+           </p>
+           <p>
+            从下图可以看到调度系统整体运行规则：
+           </p>
+           <ul>
+            <li>
+             vllm/core/scheduler.py：def _schedule_default（…），每次执行推理前都要走一遍调度。调度逻辑如下：
+             <br/>
+             <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/28a249ea4d634e0eb1f3985984f0a231.png"/>
+            </li>
+           </ul>
+           <p>
+            我们对调度逻辑做下详细分析：
+           </p>
+           <ul>
+            <li>
+             <ol>
+              <li>
+               每次执行调度前都要重新初始化一个budget类对象来
+               <strong>
+                管理本次调度的tokens和seqs数量
+               </strong>
+               , 根据数量是否超过阈值，决定将本次seq_groups放入哪个队列(一个seq_groups会包含多个seqs)。budget对象在上图
+               <strong>
+                三个调度方法中都有用到
+               </strong>
+               ，用以判断正在处理的seq_group的去向。
+              </li>
+             </ol>
+            </li>
+            <li>
+             <ol start="2">
+              <li>
+               <p>
+                我们来思考这样一个问题：调度的目的是让vllm每次推理都保持最大的吞吐量，而running队列中seq_groups才是送去做推理的，那么
+                <strong>
+                 为什么调度逻辑的判断入口是swapped而不是running呢？
+                </strong>
+               </p>
+               <p>
+                让我们从社会学角度来考虑这个问题：
+                <br/>
+                你有没有遇到过这种情况，某天，你老板（
+                <strong>
+                 调度
+                </strong>
+                ）来到你面前，跟你（
+                <strong>
+                 running
+                </strong>
+                ）说，亲，你的工作饱和吗（
+                <strong>
+                 最大吞吐量
+                </strong>
+                ），要不要给你再来点？我想你肯定没遇到过。真实的情况是，老板会直接把工作甩你脸上，工作不饱和你就干吧，没时间干（
+                <strong>
+                 gpu资源不足或处理数量超出阈值
+                </strong>
+                ）就先积压起来（watiing or swapped），有时间再搞。
+               </p>
+               <p>
+                那么问题来了，你（running）工作的来源有两个（waiting，swapped），要从哪个队列拿数据呢？
+                <br/>
+                稍微思考下就能知道，必定先考虑积压的（swapped），因为这是已经做过一部分的工作，如果不优先处理，它们会始终占据着你的脑容量（
+                <strong>
+                 系统资源
+                </strong>
+                ）; 而另一边，waiting队列则是完全没开始的新工作，当前也不存在任何资源占用问题，一比较就高下立判了吧！同时这也由调度原则决定：
+                <strong>
+                 先来的请求先被服务
+                </strong>
+                ，swapped生命历程为：waiting -&gt; running -&gt; swapped, 从整个时间尺度上看，swapped肯定比现在处于waiting队列的seq_group来的更早。
+               </p>
+              </li>
+             </ol>
+            </li>
+            <li>
+             <ol start="3">
+              <li>
+               如果swapped有积压的工作（非空），说明你已经在高强度工作，不能向running继续塞新工作了。同时要看看你的工作情况（_schedule_running）,看在接下来工作（
+               <strong>
+                下一次推理
+               </strong>
+               ）是否有风险(
+               <strong>
+                预期资源不足或tokens,seqs数量超出阈值
+               </strong>
+               )，毕竟压榨打工人是为了创造更多价值，但若直接把打工人累死就啥都没了！（
+               <strong>
+                gpu 爆显存
+               </strong>
+               ）。如果swapped为空，只能从waiting队列拿数据了（
+               <strong>
+                使用_schedule_prefills方法调度
+               </strong>
+               ）。
+              </li>
+             </ol>
+            </li>
+            <li>
+             <ol start="4">
+              <li>
+               从waiting队列取出数据prefill后，先判断它的seq_groups数量，如果为非0，说明有取出seq_group，
+               <strong>
+                再验证下budget阈值（tokens和seqs数量，_schedule_prefills方法内部已经对budget作过校验，此处仅是为了代码健壮性），没问题就能加入running队列，愉快地做推理去，至此，本次调度完结
+               </strong>
+               。若waiting队列为空，没有seq_group可用，那么prefill的seq_group数量必定也为0。此时swapped和waiting队列都没有提供新的seq_group（
+               <strong>
+                此时swapped队列为空，但waiting队列不一定为空，也可能是当前系统资源紧张，因此跳过取数据的步骤，导致prefill.seq_groups为空
+               </strong>
+               ），唯一还在活跃的队列是running。
+              </li>
+             </ol>
+            </li>
+            <li>
+             <ol start="5">
+              <li>
+               _schedule_running处理的是running队列，这个队列里面存储的是
+               <strong>
+                上一次执行推理
+               </strong>
+               的seq_groups, 以前行不代表现在也可以，如经过推理后新生成token的kv-cache会占用部分资源，
+               <strong>
+                导致系统资源不足以支撑running队列中的所有seq_groups再做一次推理
+               </strong>
+               ，所以还要对running队列中的seq_group进行
+               <strong>
+                校验
+               </strong>
+               ，如果确实不能支撑，就要执行抢占操作。
+              </li>
+             </ol>
+            </li>
+            <li>
+             <ol start="6">
+              <li>
+               接下来要判断是否存在抢占现象，如果发生抢占，就根据抢占类型转移到不同队列中，对抢占的处理在（一）有讲到。如果没有发生抢占，用_schedule_swapped调度方法 转移seq_group到running队列。
+               <strong>
+                源码在这里没有对swapped队列是否为空做二次判断
+               </strong>
+               ，也可以理解吧，毕竟如果队列为空，那就啥都不取呗！
+              </li>
+             </ol>
+            </li>
+            <li>
+             <ol start="7">
+              <li>
+               现在获得seq_groups都是经过筛选的，能确保下一次推理时不会爆显存，还要做最后一次判断，确认没有超过调度器设置的推理时的阈值（tokens和seqs，基本可确定没问题，因为
+               <strong>
+                三个调度方法中都有对阈值做判断
+               </strong>
+               ，觉得这里的判断只是为了增加代码的健壮性）。之后把经过检验的所有seq_groups加入到running队列，这些才是
+               <strong>
+                可用于下一次推理的seq_groups
+               </strong>
+               (成功上岸！)
+              </li>
+             </ol>
+            </li>
+           </ul>
+           <pre><code class="prism language-python"> <span class="token keyword">def</span> <span class="token function">_schedule_default</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> SchedulerOutputs<span class="token punctuation">:</span>
+     <span class="token triple-quoted-string string">"""Schedule queued requests.
+     The current policy is designed to optimize the throughput. First,
+     it batches as many prefill requests as possible. And it schedules
+     decodes. If there's a pressure on GPU memory, decode requests can
+     be swapped or preempted.
+
+     当前策调度略旨在优化吞吐量。首先，它会批量处理尽可能多的预填充请求。然后它会安排解码。
+     如果 GPU 内存有压力，则可以交换或抢占解码请求。因此会优先从swapped进行判断。
+     """</span>
+     <span class="token comment"># Include running requests to the budget.</span>
+     <span class="token comment"># 每次step都要重新初始化一个budget来管理本次调度的的tokens和seqs数量, 根据数量是否超过阈值，决定将本次</span>
+     <span class="token comment"># seq_groups放入哪个队列。(一个seq_groups会包含多个seqs)</span>
+     budget <span class="token operator">=</span> SchedulingBudget<span class="token punctuation">(</span>
+             token_budget<span class="token operator">=</span>self<span class="token punctuation">.</span>scheduler_config<span class="token punctuation">.</span>max_num_batched_tokens<span class="token punctuation">,</span>
+             max_num_seqs<span class="token operator">=</span>self<span class="token punctuation">.</span>scheduler_config<span class="token punctuation">.</span>max_num_seqs<span class="token punctuation">,</span>
+     <span class="token punctuation">)</span>
+
+     <span class="token comment"># Make sure we include num running seqs before scheduling prefill,</span>
+     <span class="token comment"># so that we don't schedule beyond max_num_seqs for prefill.</span>
+     <span class="token comment"># 先统计正在执行推理的seq_groups中seq的数量</span>
+     <span class="token keyword">for</span> seq_group <span class="token keyword">in</span> self<span class="token punctuation">.</span>running<span class="token punctuation">:</span>
+         budget<span class="token punctuation">.</span>add_num_seqs<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> seq_group<span class="token punctuation">.</span>get_max_num_running_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+     <span class="token comment"># lora推理相关，可忽略</span>
+     curr_loras <span class="token operator">=</span> <span class="token builtin">set</span><span class="token punctuation">(</span>
+             seq_group<span class="token punctuation">.</span>lora_int_id <span class="token keyword">for</span> seq_group <span class="token keyword">in</span> self<span class="token punctuation">.</span>running
+             <span class="token keyword">if</span> seq_group<span class="token punctuation">.</span>lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">if</span> self<span class="token punctuation">.</span>lora_enabled <span class="token keyword">else</span> <span class="token boolean">None</span>
+
+     <span class="token comment"># 以下三个变量，类似于C++中的结构体。将多个变量合在一起，通过.属性访问</span>
+     <span class="token comment"># 各自保存处于不同活跃状态(wait,run,swap)的seq_groups具有的属性</span>
+     prefills <span class="token operator">=</span> SchedulerPrefillOutputs<span class="token punctuation">.</span>create_empty<span class="token punctuation">(</span><span class="token punctuation">)</span>
+     running_scheduled <span class="token operator">=</span> SchedulerRunningOutputs<span class="token punctuation">.</span>create_empty<span class="token punctuation">(</span><span class="token punctuation">)</span>
+     swapped_in <span class="token operator">=</span> SchedulerSwappedInOutputs<span class="token punctuation">.</span>create_empty<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+     <span class="token comment"># If any requests are swapped, prioritized swapped requests.</span>
+     <span class="token comment"># 为什么要从swap开始判断？</span>
+     <span class="token comment"># 调度的任务是优化吞吐量，即保证处于running状态的seqs最多。running从wait和swap队列</span>
+     <span class="token comment"># 获得，首先积压的任务可能要比wait的优先级高，因为swap队列中的任务始终占据着系统资源，当</span>
+     <span class="token comment"># running可添加时，应该首先处理swap。</span>
+     <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>swapped<span class="token punctuation">:</span>  <span class="token comment"># 如果swapped队列为空</span>
+         <span class="token comment"># 既然不能从swap想running转移，那就只能从wait队列拿任务了。</span>
+         <span class="token comment"># wait队列中的都是原始任务，第一步要预填充</span>
+         <span class="token comment"># prefills是一个伪结构体：可以.出以下属性</span>
+         <span class="token comment">#     seq_groups: List[SequenceGroup]</span>
+         <span class="token comment">#     ignored_seq_groups: List[SequenceGroup]</span>
+         <span class="token comment">#     num_lookahead_slots: int</span>
+         prefills <span class="token operator">=</span> self<span class="token punctuation">.</span>_schedule_prefills<span class="token punctuation">(</span>budget<span class="token punctuation">,</span> curr_loras<span class="token punctuation">,</span> enable_chunking<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+
+     <span class="token comment"># Don't schedule decodes if prefills are scheduled.</span>
+     <span class="token comment"># NOTE: If `_schedule_prefills` doesn't enable chunking, self.running</span>
+     <span class="token comment"># only contains decode requests, not chunked prefills.</span>
+
+     <span class="token comment"># self.waiting空,或 self.swapped非空,都会导致prefills.seq_groups数量为0</span>
+     <span class="token comment"># # 这个判断的意思是,prefills.seq_groups==0,说明本次调度没有安排预填充任务,那么就安排解码任务.</span>
+     <span class="token comment"># 执行推理任务的seq_group都在running队列，因此需要对这个队列进行调度。</span>
+     <span class="token comment"># 调度什么呢？</span>
+     <span class="token comment"># 是看running队列中的seq_group是否可以继续做推理任务。因为vllm动态管理，最大限度优化吞吐量，会导致blocks资源紧张</span>
+     <span class="token comment"># 上次推理生成的tokens的kv-cache需要GPU blocks去存储，导致资源消耗。那么这次准备推理时blocks数量不一定能够它完成</span>
+     <span class="token comment"># 推理，所以要对running队列中每个seq_group进行检查，看是否可以进行做推理。</span>
+     <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>prefills<span class="token punctuation">.</span>seq_groups<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+         running_scheduled <span class="token operator">=</span> self<span class="token punctuation">.</span>_schedule_running<span class="token punctuation">(</span>budget<span class="token punctuation">,</span> curr_loras<span class="token punctuation">,</span> enable_chunking<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+
+         <span class="token comment"># If any sequence group is preempted, do not swap in any sequence</span>
+         <span class="token comment"># group. because it means there's no slot for new running requests.</span>
+         <span class="token comment"># 在对running队列调度后(从self.running队列取seq_group,准备进行推理),如果没有seq_group被</span>
+         <span class="token comment"># 抢占(退回wait队列),也没有seq_group被转移到CPU上, 说明blocks资源充足,可以把以前</span>
+         <span class="token comment"># self.swapped队列中积压的seq_group转移到gpu blocks做推理.</span>
+
+         <span class="token comment"># 注意这几个队列的判断逻辑. 如果self.swapped原本就非空,会进入上面的if判断分支进行self.running队列</span>
+         <span class="token comment"># 调度取值.然后根据这个过程中是否有seq_group被preempted和swapped_out获知blocks资源使用情况.</span>
+         <span class="token comment"># 如果没有被preempted和swapped_out.说明工作不饱和，就把self.swapped内容取出来，加入running队列进行推理</span>
+         <span class="token comment"># 如果有被preempted和swapped_out，说明资源紧张. self.swapped积压的任务暂时还处理不了</span>
+         <span class="token comment"># 如果下面if为False,意思是就不要再从self.swapped转移seq_group会gpu做推理了</span>
+         <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>preempted<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token builtin">len</span><span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>swapped_out<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+             swapped_in <span class="token operator">=</span> self<span class="token punctuation">.</span>_schedule_swapped<span class="token punctuation">(</span>budget<span class="token punctuation">,</span> curr_loras<span class="token punctuation">)</span>
+
+     <span class="token comment"># 最后一次判断本次推理的tokens和seqs数量是否超过阈值</span>
+     <span class="token keyword">assert</span> budget<span class="token punctuation">.</span>num_batched_tokens <span class="token operator">&lt;=</span> self<span class="token punctuation">.</span>scheduler_config<span class="token punctuation">.</span>max_num_batched_tokens
+     <span class="token keyword">assert</span> budget<span class="token punctuation">.</span>num_curr_seqs <span class="token operator">&lt;=</span> self<span class="token punctuation">.</span>scheduler_config<span class="token punctuation">.</span>max_num_seqs
+
+     <span class="token comment"># Update waiting requests.</span>
+     <span class="token comment"># 这个类型被抢占的seq_group，打回原型，重新加入waiting队列。</span>
+     <span class="token comment"># 幸运的是添加到了队列头部，当再次从waiting队列取数据时，会优先处理它</span>
+     self<span class="token punctuation">.</span>waiting<span class="token punctuation">.</span>extendleft<span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>preempted<span class="token punctuation">)</span>
+     <span class="token comment"># Update new running requests.</span>
+     <span class="token comment"># 将以上通过层层筛选的seq_group加入到running队列(真·running)，这些seq_group才是下一步的推理对象</span>
+     self<span class="token punctuation">.</span>running<span class="token punctuation">.</span>extend<span class="token punctuation">(</span><span class="token punctuation">[</span>s<span class="token punctuation">.</span>seq_group <span class="token keyword">for</span> s <span class="token keyword">in</span> prefills<span class="token punctuation">.</span>seq_groups<span class="token punctuation">]</span><span class="token punctuation">)</span>
+     self<span class="token punctuation">.</span>running<span class="token punctuation">.</span>extend<span class="token punctuation">(</span><span class="token punctuation">[</span>s<span class="token punctuation">.</span>seq_group <span class="token keyword">for</span> s <span class="token keyword">in</span> running_scheduled<span class="token punctuation">.</span>decode_seq_groups<span class="token punctuation">]</span><span class="token punctuation">)</span>
+     self<span class="token punctuation">.</span>running<span class="token punctuation">.</span>extend<span class="token punctuation">(</span><span class="token punctuation">[</span>s<span class="token punctuation">.</span>seq_group <span class="token keyword">for</span> s <span class="token keyword">in</span> swapped_in<span class="token punctuation">.</span>decode_seq_groups<span class="token punctuation">]</span><span class="token punctuation">)</span>
+     <span class="token comment"># Update swapped requests.</span>
+     <span class="token comment"># 没有足够资源做推理的seq_group会从running转移到swap队列(swap队列是路径之一，另一个是加入到wait队列)</span>
+     self<span class="token punctuation">.</span>swapped<span class="token punctuation">.</span>extend<span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>swapped_out<span class="token punctuation">)</span>
+     <span class="token comment"># 统计被抢占的seq_group数量</span>
+     preempted <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>preempted<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token builtin">len</span><span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>swapped_out<span class="token punctuation">)</span>
+
+     <span class="token comment"># There should be no prefill from running queue because this policy</span>
+     <span class="token comment"># doesn't allow chunked prefills.</span>
+     <span class="token keyword">assert</span> <span class="token builtin">len</span><span class="token punctuation">(</span>running_scheduled<span class="token punctuation">.</span>prefill_seq_groups<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span>
+     <span class="token keyword">assert</span> <span class="token builtin">len</span><span class="token punctuation">(</span>swapped_in<span class="token punctuation">.</span>prefill_seq_groups<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span>
+
+     <span class="token keyword">return</span> SchedulerOutputs<span class="token punctuation">(</span>
+             scheduled_seq_groups<span class="token operator">=</span><span class="token punctuation">(</span>prefills<span class="token punctuation">.</span>seq_groups <span class="token operator">+</span>
+                                   running_scheduled<span class="token punctuation">.</span>decode_seq_groups <span class="token operator">+</span>
+                                   swapped_in<span class="token punctuation">.</span>decode_seq_groups<span class="token punctuation">)</span><span class="token punctuation">,</span>
+             num_prefill_groups<span class="token operator">=</span><span class="token builtin">len</span><span class="token punctuation">(</span>prefills<span class="token punctuation">.</span>seq_groups<span class="token punctuation">)</span><span class="token punctuation">,</span>
+             num_batched_tokens<span class="token operator">=</span>budget<span class="token punctuation">.</span>num_batched_tokens<span class="token punctuation">,</span>
+             blocks_to_swap_in<span class="token operator">=</span>swapped_in<span class="token punctuation">.</span>blocks_to_swap_in<span class="token punctuation">,</span>
+             blocks_to_swap_out<span class="token operator">=</span>running_scheduled<span class="token punctuation">.</span>blocks_to_swap_out<span class="token punctuation">,</span>
+             blocks_to_copy<span class="token operator">=</span>running_scheduled<span class="token punctuation">.</span>blocks_to_copy <span class="token operator">+</span>
+                            swapped_in<span class="token punctuation">.</span>blocks_to_copy<span class="token punctuation">,</span>
+             ignored_seq_groups<span class="token operator">=</span>prefills<span class="token punctuation">.</span>ignored_seq_groups <span class="token operator">+</span>
+                                swapped_in<span class="token punctuation">.</span>infeasible_seq_groups<span class="token punctuation">,</span>
+             num_lookahead_slots<span class="token operator">=</span>running_scheduled<span class="token punctuation">.</span>num_lookahead_slots<span class="token punctuation">,</span>
+             running_queue_size<span class="token operator">=</span><span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>running<span class="token punctuation">)</span><span class="token punctuation">,</span>
+             preempted<span class="token operator">=</span>preempted<span class="token punctuation">,</span>
+     <span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            从整体调度逻辑中我们可以看到，核心代码是三处子调度方法，接下来我们来详细分析下这些方法的代码。
+           </p>
+           <h3>
+            <a id="51__schedule_prefills_147">
+            </a>
+            <strong>
+             5.1 _schedule_prefills调用逻辑
+            </strong>
+           </h3>
+           <p>
+            对waiting队列的调度充斥着各种判断，核心只有一条：
+            <strong>
+             当把取出seq_group加入running队列进行推理时，系统资源是否够用
+            </strong>
+            。
+            <br/>
+            基于此，有以下几种处理方式：
+           </p>
+           <ul>
+            <li>
+             准备取出的seq_group 超出
+             <strong>
+              prompt长度阈值
+             </strong>
+             ，标记为finish，以后不再处理
+            </li>
+            <li>
+             准备取出的seq_group 需求的blocks
+             <strong>
+              数量超出阈值
+             </strong>
+             ，两种处理：①标记为finish，以后不再处理，② 不再取出seq_group，留待以后再处理，跳出调度流程。
+            </li>
+            <li>
+             准备取出的seq_group tokens或seq数量超出推理能承受的阈值，不再取出seq_group，留待以后再处理，跳出调度流程
+             <br/>
+             <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/d2475f4882864b2a840715c28fb58c73.png"/>
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_schedule_prefills</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            budget<span class="token punctuation">:</span> SchedulingBudget<span class="token punctuation">,</span>
+            curr_loras<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Set<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            enable_chunking<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> SchedulerPrefillOutputs<span class="token punctuation">:</span>
+        <span class="token comment"># ignored_seq_groups：记录因太长（所需的blocks和总blocks之间的差值超过阈值了），</span>
+        <span class="token comment"># 而无法继续做生成的seq_group，这些seq_group中的seq状态都会被标记为</span>
+        <span class="token comment"># FINISHED_IGNORED，表示直接不处理他们</span>
+        ignored_seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 用于装载从wait队列转移出来的seq_group</span>
+        seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+        waiting_queue <span class="token operator">=</span> self<span class="token punctuation">.</span>waiting
+
+        leftover_waiting_sequences<span class="token punctuation">:</span> Deque<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> deque<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># self._passed_delay：通过比较当前请求到达时间来确定是否要从wait队列拿任务</span>
+        <span class="token comment"># 因为拿任务也要占用时间，需要平衡调度任务与推理任务的调用时机</span>
+        <span class="token keyword">while</span> self<span class="token punctuation">.</span>_passed_delay<span class="token punctuation">(</span>time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">and</span> waiting_queue<span class="token punctuation">:</span>
+            seq_group <span class="token operator">=</span> waiting_queue<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+            <span class="token comment"># list,从当前seq_group取出准备推理的seq序列. 1个prompt可能有多个seq(多输出)，但wait队列中连预填充</span>
+            <span class="token comment"># 都没进行，因此这时的seq(仅是prompt)数量必定==1</span>
+            waiting_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>WAITING<span class="token punctuation">)</span>
+            <span class="token keyword">assert</span> <span class="token builtin">len</span><span class="token punctuation">(</span>waiting_seqs<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"Waiting sequence group should have only one prompt sequence."</span>
+
+            <span class="token comment"># 当前待推理的seq_group需要处理,或者说准备返回的tokens数量,</span>
+            <span class="token comment"># 对于WAITING状态，只有1个seq，tokens数量为prompt长度</span>
+            num_new_tokens <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_num_new_tokens<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span>
+                                                      SequenceStatus<span class="token punctuation">.</span>WAITING<span class="token punctuation">,</span>
+                                                      enable_chunking<span class="token punctuation">,</span> budget<span class="token punctuation">)</span>
+            <span class="token keyword">if</span> <span class="token keyword">not</span> enable_chunking<span class="token punctuation">:</span>
+                num_prompt_tokens <span class="token operator">=</span> waiting_seqs<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>get_len<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token comment"># 从waiting取出的seq_group，连预填充都没做，更不会有output token，</span>
+                <span class="token comment"># 若计算出的tokens数量不等与prompt数量，一定有问题，抛出异常吧！</span>
+                <span class="token keyword">assert</span> num_new_tokens <span class="token operator">==</span> num_prompt_tokens
+
+            <span class="token comment"># 如果这条seq的长度 &gt; 每次调度能处理的最大序列长度，那么把这条seq的状态置为FINISHED_IGNORED，</span>
+            <span class="token comment"># 并将对应seq_group装入ignored_seq_groups中，然后将其从waiting列表中移除，永不再处理，完结撒花~</span>
+            prompt_limit <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_prompt_limit<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+            <span class="token keyword">if</span> num_new_tokens <span class="token operator">&gt;</span> prompt_limit<span class="token punctuation">:</span>
+                logger<span class="token punctuation">.</span>warning<span class="token punctuation">(</span>
+                        <span class="token string">"Input prompt (%d tokens) is too long"</span>
+                        <span class="token string">" and exceeds limit of %d"</span><span class="token punctuation">,</span> num_new_tokens<span class="token punctuation">,</span> prompt_limit<span class="token punctuation">)</span>
+                <span class="token keyword">for</span> seq <span class="token keyword">in</span> waiting_seqs<span class="token punctuation">:</span>
+                    seq<span class="token punctuation">.</span>status <span class="token operator">=</span> SequenceStatus<span class="token punctuation">.</span>FINISHED_IGNORED
+                ignored_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>  <span class="token comment"># 加入失败者联盟</span>
+                waiting_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># 从 waiting 队列中踢出去</span>
+                <span class="token keyword">continue</span>  <span class="token comment"># 继续从waiting拿数据处理</span>
+
+            <span class="token comment"># If the sequence group cannot be allocated, stop.</span>
+            <span class="token comment"># 比较当前seq需要的物理块,gpu可用物理块之间的数量关系. 决定是否能给当前seq_group分配物理块</span>
+            <span class="token comment"># can_allocate返回值可能有三种： NEVER：不分配；OK：可以分配；LATER：延迟分配</span>
+            can_allocate <span class="token operator">=</span> self<span class="token punctuation">.</span>block_manager<span class="token punctuation">.</span>can_allocate<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+            <span class="token keyword">if</span> can_allocate <span class="token operator">==</span> AllocStatus<span class="token punctuation">.</span>LATER<span class="token punctuation">:</span>
+                <span class="token keyword">break</span>
+            <span class="token comment"># 当前seq需要的blocks数量,超过gpu能提供的最大数量.加入失败者联盟,永不再处理，</span>
+            <span class="token keyword">elif</span> can_allocate <span class="token operator">==</span> AllocStatus<span class="token punctuation">.</span>NEVER<span class="token punctuation">:</span>
+                logger<span class="token punctuation">.</span>warning<span class="token punctuation">(</span>
+                        <span class="token string-interpolation"><span class="token string">f"Input prompt (</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>num_new_tokens<span class="token punctuation">}</span></span><span class="token string"> tokens) is too long"</span></span>
+                        <span class="token string">" and exceeds the capacity of block_manager"</span><span class="token punctuation">)</span>
+                <span class="token keyword">for</span> seq <span class="token keyword">in</span> waiting_seqs<span class="token punctuation">:</span>
+                    seq<span class="token punctuation">.</span>status <span class="token operator">=</span> SequenceStatus<span class="token punctuation">.</span>FINISHED_IGNORED
+                ignored_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+                waiting_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token keyword">continue</span>
+
+            <span class="token comment"># lora相关，忽略</span>
+            lora_int_id <span class="token operator">=</span> <span class="token number">0</span>
+            <span class="token keyword">if</span> self<span class="token punctuation">.</span>lora_enabled<span class="token punctuation">:</span>
+                lora_int_id <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>lora_int_id
+                <span class="token keyword">assert</span> curr_loras <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span>
+                <span class="token keyword">assert</span> self<span class="token punctuation">.</span>lora_config <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>self<span class="token punctuation">.</span>lora_enabled <span class="token keyword">and</span> lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span>
+                        <span class="token keyword">and</span> lora_int_id <span class="token keyword">not</span> <span class="token keyword">in</span> curr_loras
+                        <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>curr_loras<span class="token punctuation">)</span> <span class="token operator">&gt;=</span> self<span class="token punctuation">.</span>lora_config<span class="token punctuation">.</span>max_loras<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token comment"># We don't have a space for another LoRA, so</span>
+                    <span class="token comment"># we ignore this request for now.</span>
+                    leftover_waiting_sequences<span class="token punctuation">.</span>appendleft<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+                    waiting_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                    <span class="token keyword">continue</span>
+
+            <span class="token comment"># 当前seq_group中状态为 未执行完 的序列的数量，即seq还没推理完成的数量. 刚从wait中取出时，</span>
+            <span class="token comment"># seq数量是1,但推理生成阶段,这个seq_group中会有n个seq在并行.n是外部传入的output数量. 因此这里num_new_seqs==n</span>
+            num_new_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>get_max_num_running_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token comment"># budget.can_schedule同时判断tokens和seqs数量是否超过阈值，任一个超过单次调度能执行的总数的阈值</span>
+            <span class="token comment"># 说明这step可推理的seqs数量已经马上趋于饱和，不能再加入seq到running队列。跳出while, 结束本次waiting向running的调度</span>
+            <span class="token keyword">if</span> num_new_tokens <span class="token operator">==</span> <span class="token number">0</span> <span class="token keyword">or</span> <span class="token keyword">not</span> budget<span class="token punctuation">.</span>can_schedule<span class="token punctuation">(</span>num_new_tokens<span class="token operator">=</span>num_new_tokens<span class="token punctuation">,</span>
+                                                              num_new_seqs<span class="token operator">=</span>num_new_seqs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                <span class="token keyword">break</span>
+
+            <span class="token comment"># Can schedule this request.</span>
+            <span class="token comment"># lora相关，忽略</span>
+            <span class="token keyword">if</span> curr_loras <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span> <span class="token keyword">and</span> lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">:</span>
+                curr_loras<span class="token punctuation">.</span>add<span class="token punctuation">(</span>lora_int_id<span class="token punctuation">)</span>
+
+            <span class="token comment"># 走到这一步时，说明当前seq_group已经通过上述种种验证，可以被加入running队列进行推理</span>
+            <span class="token comment"># 先将其从waiting队列中移出</span>
+            waiting_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token comment"># 为当前seq_group分配物理块,并将该seq_group中每条seq的status从waiting改为running</span>
+            self<span class="token punctuation">.</span>_allocate_and_set_running<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+
+            <span class="token comment"># ScheduledSequenceGroup类似于C++结构体。仅包含seq_group和token_chunk_size两个变量</span>
+            <span class="token comment"># 搞不懂vllm为什么总喜欢这种包裹操作，在各处代码中随处可见。用基本的list,或dict不好吗！</span>
+            seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>
+                    ScheduledSequenceGroup<span class="token punctuation">(</span>seq_group<span class="token operator">=</span>seq_group<span class="token punctuation">,</span>
+                                           token_chunk_size<span class="token operator">=</span>num_new_tokens<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+            <span class="token comment"># 当前seq_group的tokens和seqs数量增加到预算budget中</span>
+            budget<span class="token punctuation">.</span>add_num_batched_tokens<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_new_tokens<span class="token punctuation">)</span>
+            budget<span class="token punctuation">.</span>add_num_seqs<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_new_seqs<span class="token punctuation">)</span>
+
+        <span class="token comment"># Queue requests that couldn't be scheduled.</span>
+        <span class="token comment"># 和lora相关的操作，忽略</span>
+        waiting_queue<span class="token punctuation">.</span>extendleft<span class="token punctuation">(</span>leftover_waiting_sequences<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>seq_groups<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>prev_prompt <span class="token operator">=</span> <span class="token boolean">True</span>
+
+        <span class="token keyword">return</span> SchedulerPrefillOutputs<span class="token punctuation">(</span>
+                seq_groups<span class="token operator">=</span>seq_groups<span class="token punctuation">,</span>
+                ignored_seq_groups<span class="token operator">=</span>ignored_seq_groups<span class="token punctuation">,</span>
+                num_lookahead_slots<span class="token operator">=</span>self<span class="token punctuation">.</span>_get_num_lookahead_slots<span class="token punctuation">(</span>is_prefill<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+           <h3>
+            <a id="52__schedule_running_281">
+            </a>
+            <strong>
+             5.2 _schedule_running调度方法
+            </strong>
+           </h3>
+           <p>
+            running队列存储时上次做推理的seq_group，下次推理前， 要判断下
+            <strong>
+             是否还可以继续做推理
+            </strong>
+            ，如果不能，就要从队列移出来。
+            <br/>
+            <strong>
+             会转移到waiting或swapped队列
+            </strong>
+            ，转移规则我们第一篇博客中已经做了详细说明。
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/8b8dad1a24f64aa0a078ba27d25e43b1.png"/>
+           </p>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_schedule_running</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            budget<span class="token punctuation">:</span> SchedulingBudget<span class="token punctuation">,</span>
+            curr_loras<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Set<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            enable_chunking<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> SchedulerRunningOutputs<span class="token punctuation">:</span>
+        <span class="token comment"># Blocks that need to be swapped or copied before model execution.</span>
+        <span class="token comment"># todo 类型变了</span>
+        <span class="token comment"># blocks_to_swap_out：{gpu物理块id: cpu物理块id}</span>
+        <span class="token comment"># blocks_to_copy: {旧物理块id：[由旧物理块copy-on-write而来的新物理块id]}</span>
+        blocks_to_swap_out<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        blocks_to_copy<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+        decode_seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>ScheduledSequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        prefill_seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>ScheduledSequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        preempted<span class="token punctuation">:</span> List<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        swapped_out<span class="token punctuation">:</span> List<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+        <span class="token comment"># NOTE(woosuk): Preemption happens only when there is no available slot</span>
+        <span class="token comment"># to keep all the sequence groups in the RUNNING state.</span>
+
+        running_queue <span class="token operator">=</span> self<span class="token punctuation">.</span>running
+
+        <span class="token keyword">while</span> running_queue<span class="token punctuation">:</span>
+            seq_group <span class="token operator">=</span> running_queue<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+            <span class="token comment"># 当前待推理的seq_group需要处理,或者说准备返回的tokens数量,对于RUNNING状态，每个seq返回1个token</span>
+            num_running_tokens <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_num_new_tokens<span class="token punctuation">(</span>
+                    seq_group<span class="token punctuation">,</span> SequenceStatus<span class="token punctuation">.</span>RUNNING<span class="token punctuation">,</span> enable_chunking<span class="token punctuation">,</span> budget<span class="token punctuation">)</span>
+
+            <span class="token comment"># todo 觉得这个判断有点多余,因为处于RUNNING状态的seq,必定有tokens返回,prompt总不能为空吧，num_running_tokens</span>
+            <span class="token comment"># todo 不可能为0, 再说,如果为0, 方法self._get_num_new_tokens内部就会抛出异常,因为做了assert断言</span>
+            <span class="token keyword">if</span> num_running_tokens <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+                <span class="token keyword">break</span>
+
+            <span class="token comment"># 经过num_running_tokens检验没问题后, 将该seq_group从running_queue中取出来</span>
+            running_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+            <span class="token comment"># 对于这个seq_group，检查对于其中的每一个seq，是否能至少分配一个物理块给它，如果不能的话</span>
+            <span class="token comment"># （说明要执行抢占操作了，否则马上会没有资源让这个最早到达的seq_group做完推理）：</span>
+            <span class="token comment"># 这里用了while...else，如果while条件正常结束，则进入else内容；如果被break，则不会执行else</span>
+            <span class="token keyword">while</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>_can_append_slots<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span><span class="token punctuation">:</span>  <span class="token comment"># 如果不能为当前seq_group的每个seq都分配一个block</span>
+                <span class="token comment"># 这个seq_group本来是要送去做推理的,但没有足够的gpu物理blocks分配给它</span>
+                <span class="token comment"># 根据vllm的调度原则，这个seq_group要被优先处理，没有足够资源，就把running队列最后位置的</span>
+                <span class="token comment"># seq_group踢出去，释放gpu blocks给当前seq_group使用。</span>
+
+                <span class="token comment"># seq_group准备返回的tokens数量已经加到budget属性上,现在不处理它, 要把数量再减回来</span>
+                <span class="token comment"># budget会记录每次+-数量的seq_group.request_id,如果以前没被+过，现在就不会被-，就像下面的调用一样</span>
+                budget<span class="token punctuation">.</span>subtract_num_batched_tokens<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_running_tokens<span class="token punctuation">)</span>
+                <span class="token comment"># 在外层总调度中，已经在budget汇总了所有正在活跃的seqs数量，现在要减去属于该seq_group的seqs数量</span>
+                num_running_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>get_max_num_running_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                budget<span class="token punctuation">.</span>subtract_num_seqs<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_running_seqs<span class="token punctuation">)</span>
+
+                <span class="token comment"># lora相关,忽略</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>curr_loras <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span> <span class="token keyword">and</span> seq_group<span class="token punctuation">.</span>lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span>
+                        <span class="token keyword">and</span> seq_group<span class="token punctuation">.</span>lora_int_id <span class="token keyword">in</span> curr_loras<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    curr_loras<span class="token punctuation">.</span>remove<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>lora_int_id<span class="token punctuation">)</span>
+
+                <span class="token comment"># ------------------------------------------------------------------------------------------------------</span>
+                <span class="token comment"># 经过以下释放gpu blocks工作后,再次进入while循环判断gpu blocks数量是否够用,</span>
+                <span class="token comment"># 如果够用,进入到与while对应的else分支,如果不够用,继续释放gpu blocks,直到够用或running_queue全部取完.</span>
+                <span class="token comment"># ------------------------------------------------------------------------------------------------------</span>
+
+                <span class="token comment"># 如果此时running_queue队列不为空,把最后一个seq_group踢出去放入swap队列,给</span>
+                <span class="token comment"># 上面这个seq_group腾位置(释放最后一个seq_group对应的gpu blocks)</span>
+                <span class="token keyword">if</span> running_queue<span class="token punctuation">:</span>
+                    <span class="token comment"># Preempt the lowest-priority sequence groups.</span>
+                    victim_seq_group <span class="token operator">=</span> running_queue<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+                    <span class="token comment"># 有两种swap方式,RECOMPUTE:删除所有,回炉到waiting队列. SWAP:将blocks全部转移到CPU blocks上</span>
+                    preempted_mode <span class="token operator">=</span> self<span class="token punctuation">.</span>_preempt<span class="token punctuation">(</span>victim_seq_group<span class="token punctuation">,</span> blocks_to_swap_out<span class="token punctuation">)</span>
+                    <span class="token keyword">if</span> preempted_mode <span class="token operator">==</span> PreemptionMode<span class="token punctuation">.</span>RECOMPUTE<span class="token punctuation">:</span>
+                        preempted<span class="token punctuation">.</span>append<span class="token punctuation">(</span>victim_seq_group<span class="token punctuation">)</span>
+                    <span class="token keyword">else</span><span class="token punctuation">:</span>
+                        swapped_out<span class="token punctuation">.</span>append<span class="token punctuation">(</span>victim_seq_group<span class="token punctuation">)</span>
+                <span class="token comment"># 如果running_queue队列已经空了,没有替罪的羊,只能把自己放入swap队列了.</span>
+                <span class="token keyword">else</span><span class="token punctuation">:</span>
+                    <span class="token comment"># No other sequence groups can be preempted.</span>
+                    <span class="token comment"># Preempt the current sequence group.</span>
+                    preempted_mode <span class="token operator">=</span> self<span class="token punctuation">.</span>_preempt<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> blocks_to_swap_out<span class="token punctuation">)</span>
+                    <span class="token keyword">if</span> preempted_mode <span class="token operator">==</span> PreemptionMode<span class="token punctuation">.</span>RECOMPUTE<span class="token punctuation">:</span>
+                        preempted<span class="token punctuation">.</span>append<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+                    <span class="token keyword">else</span><span class="token punctuation">:</span>
+                        swapped_out<span class="token punctuation">.</span>append<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+                    <span class="token comment"># 此时running_queue队列已空,已经没有seq_group可处理了,使用break中断</span>
+                    <span class="token comment"># while循环, 不走后面的else分支,直接return,而且本次调度没有指定任何待推理的seq_group</span>
+                    <span class="token keyword">break</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+                <span class="token comment"># 为当前seq_group分配gpu 物理blocks. 这里只分配了逻辑blocks与物理blocks的映射关系</span>
+                <span class="token comment"># blocks_to_copy:[旧物理块id, copy - on - write而来的新物理块id]</span>
+                self<span class="token punctuation">.</span>_append_slots<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> blocks_to_copy<span class="token punctuation">)</span>
+                is_prefill <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>is_prefill<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token keyword">if</span> is_prefill<span class="token punctuation">:</span>
+                    prefill_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>ScheduledSequenceGroup<span class="token punctuation">(</span>seq_group<span class="token operator">=</span>seq_group<span class="token punctuation">,</span>
+                                                                     token_chunk_size<span class="token operator">=</span>num_running_tokens<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token keyword">else</span><span class="token punctuation">:</span>
+                    decode_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>ScheduledSequenceGroup<span class="token punctuation">(</span>seq_group<span class="token operator">=</span>seq_group<span class="token punctuation">,</span>
+                                                                    token_chunk_size<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token comment"># todo 这似乎是个bug, 如果_can_append_slots为True，会跳过while直接走当前else分支</span>
+                <span class="token comment"># todo seqs在外层_schedule_default已经更新过，所以这里只更新tokens就好</span>
+                <span class="token comment"># todo 但是，如果_can_append_slots为False，budget会同时减去seq_group的tokens和seqs数量</span>
+                <span class="token comment"># todo 下面把tokens再加回来，逻辑没问题，但没有更新seqs！</span>
+                budget<span class="token punctuation">.</span>add_num_batched_tokens<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_running_tokens<span class="token punctuation">)</span>
+                <span class="token comment"># OPTIMIZATION:  Note that get_max_num_running_seqs is</span>
+                <span class="token comment"># expensive. For the default scheduling chase where</span>
+                <span class="token comment"># enable_chunking is False, num_seqs are updated before running</span>
+                <span class="token comment"># this method, so we don't have to update it again here.</span>
+                <span class="token comment"># 默认情况下, 以下两个if都走不到</span>
+                <span class="token keyword">if</span> enable_chunking<span class="token punctuation">:</span>
+                    num_running_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>get_max_num_running_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                    budget<span class="token punctuation">.</span>add_num_seqs<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_running_seqs<span class="token punctuation">)</span>
+                <span class="token keyword">if</span> curr_loras <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span> <span class="token keyword">and</span> seq_group<span class="token punctuation">.</span>lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">:</span>
+                    curr_loras<span class="token punctuation">.</span>add<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>lora_int_id<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> SchedulerRunningOutputs<span class="token punctuation">(</span>
+                decode_seq_groups<span class="token operator">=</span>decode_seq_groups<span class="token punctuation">,</span>
+                prefill_seq_groups<span class="token operator">=</span>prefill_seq_groups<span class="token punctuation">,</span>
+                preempted<span class="token operator">=</span>preempted<span class="token punctuation">,</span>
+                swapped_out<span class="token operator">=</span>swapped_out<span class="token punctuation">,</span>
+                blocks_to_swap_out<span class="token operator">=</span>blocks_to_swap_out<span class="token punctuation">,</span>
+                blocks_to_copy<span class="token operator">=</span>blocks_to_copy<span class="token punctuation">,</span>
+                num_lookahead_slots<span class="token operator">=</span>self<span class="token punctuation">.</span>_get_num_lookahead_slots<span class="token punctuation">(</span>is_prefill<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+           <h3>
+            <a id="53__schedule_swapped_411">
+            </a>
+            <strong>
+             5.3 _schedule_swapped调度方法
+            </strong>
+           </h3>
+           <p>
+            swapped -&gt; running, 这个调度比较简单，原则就一条：
+            <strong>
+             系统是否有足够的资源让它回来做推理
+            </strong>
+            。
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/334ae092a6f44039ad77041e9d4002e0.png"/>
+           </p>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_schedule_swapped</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            budget<span class="token punctuation">:</span> SchedulingBudget<span class="token punctuation">,</span>
+            curr_loras<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Set<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            enable_chunking<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> SchedulerSwappedInOutputs<span class="token punctuation">:</span>
+        <span class="token comment"># Blocks that need to be swapped or copied before model execution.</span>
+        <span class="token comment"># [(cpu物理块id, gpu物理块id)]</span>
+        blocks_to_swap_in<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># [(旧物理块,copy - on - write而来的新物理块id)]</span>
+        blocks_to_copy<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 准备解码的seq_group</span>
+        decode_seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>ScheduledSequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 准备预填充的seq_group</span>
+        prefill_seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>ScheduledSequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 因各种原因，被标记为不再处理的seq_group，如预填充序列太长了...</span>
+        infeasible_seq_groups<span class="token punctuation">:</span> List<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+        swapped_queue <span class="token operator">=</span> self<span class="token punctuation">.</span>swapped
+
+        leftover_swapped<span class="token punctuation">:</span> Deque<span class="token punctuation">[</span>SequenceGroup<span class="token punctuation">]</span> <span class="token operator">=</span> deque<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">while</span> swapped_queue<span class="token punctuation">:</span>
+            <span class="token comment"># 取出swap队列中最早被抢占的seq_group</span>
+            seq_group <span class="token operator">=</span> swapped_queue<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+
+            <span class="token comment"># ----------------------------------------------------------------------------------------------------------</span>
+            <span class="token comment"># If the sequence group cannot be swapped in, stop.</span>
+            <span class="token comment"># 对被抢占seq_group有两种处理方式，1. 清空放入waiting队列，这时is_prefill为True</span>
+            <span class="token comment"># 2.blocks全部转移到CPU上，这时is_prefill为False</span>
+            <span class="token comment"># self._get_num_lookahead_slots(is_prefill)必定为0，否则抛出异常，block_manager_v1不支持非0情况</span>
+            is_prefill <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>is_prefill<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token comment"># 根据需要的，与可用的物理blocks数量判断，是否可以把当前seq_group从swap队列转移到running队列</span>
+            alloc_status <span class="token operator">=</span> self<span class="token punctuation">.</span>block_manager<span class="token punctuation">.</span>can_swap_in<span class="token punctuation">(</span>
+                    seq_group<span class="token punctuation">,</span> self<span class="token punctuation">.</span>_get_num_lookahead_slots<span class="token punctuation">(</span>is_prefill<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">if</span> alloc_status <span class="token operator">==</span> AllocStatus<span class="token punctuation">.</span>LATER<span class="token punctuation">:</span>    <span class="token comment"># 稍后，资源多时再处理</span>
+                <span class="token keyword">break</span>
+            <span class="token keyword">elif</span> alloc_status <span class="token operator">==</span> AllocStatus<span class="token punctuation">.</span>NEVER<span class="token punctuation">:</span>  <span class="token comment"># 不合格，永不再处理</span>
+                logger<span class="token punctuation">.</span>warning<span class="token punctuation">(</span>
+                        <span class="token string">"Failing the request %s because there's not enough kv "</span>
+                        <span class="token string">"cache blocks to run the entire sequence."</span><span class="token punctuation">,</span>
+                        seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">)</span>
+                <span class="token keyword">for</span> seq <span class="token keyword">in</span> seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    seq<span class="token punctuation">.</span>status <span class="token operator">=</span> SequenceStatus<span class="token punctuation">.</span>FINISHED_IGNORED
+                infeasible_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+                swapped_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token keyword">continue</span>
+            <span class="token comment"># ----------------------------------------------------------------------------------------------------------</span>
+
+            <span class="token comment"># lora相关，忽略</span>
+            lora_int_id <span class="token operator">=</span> <span class="token number">0</span>
+            <span class="token keyword">if</span> self<span class="token punctuation">.</span>lora_enabled<span class="token punctuation">:</span>
+                lora_int_id <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>lora_int_id
+                <span class="token keyword">assert</span> curr_loras <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span>
+                <span class="token keyword">assert</span> self<span class="token punctuation">.</span>lora_config <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token keyword">and</span> <span class="token punctuation">(</span>lora_int_id <span class="token keyword">not</span> <span class="token keyword">in</span> curr_loras<span class="token punctuation">)</span>
+                        <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>curr_loras<span class="token punctuation">)</span> <span class="token operator">&gt;=</span> self<span class="token punctuation">.</span>lora_config<span class="token punctuation">.</span>max_loras<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token comment"># We don't have a space for another LoRA, so</span>
+                    <span class="token comment"># we ignore this request for now.</span>
+                    leftover_swapped<span class="token punctuation">.</span>appendleft<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+                    swapped_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                    <span class="token keyword">continue</span>
+
+            <span class="token comment"># The total number of sequences in the RUNNING state should not</span>
+            <span class="token comment"># exceed the maximum number of sequences.</span>
+            <span class="token comment"># 取出这个seq_group在剩余生命周期内将并行运行的最大seq数量</span>
+            num_new_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>get_max_num_running_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token comment"># 当前准备转移的seq_group,需要处理,或者说准备返回的tokens数量，</span>
+            <span class="token comment"># decode模式：每个seq num_token=1,其他模式则遵循各自的状态</span>
+            num_new_tokens <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_num_new_tokens<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span>
+                                                      SequenceStatus<span class="token punctuation">.</span>SWAPPED<span class="token punctuation">,</span>
+                                                      enable_chunking<span class="token punctuation">,</span> budget<span class="token punctuation">)</span>
+            <span class="token comment"># 感觉num_new_tokens==0的判断有点多余，基本不可能为0</span>
+            <span class="token comment"># budget.can_schedule 会判断加上当前seq_group的num_new_tokens和num_new_seqs后</span>
+            <span class="token comment"># 总数是否会超标，如果超标，说明不能再添加任何seq_group到running队列，直接结束本次调度</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>num_new_tokens <span class="token operator">==</span> <span class="token number">0</span>
+                    <span class="token keyword">or</span> <span class="token keyword">not</span> budget<span class="token punctuation">.</span>can_schedule<span class="token punctuation">(</span>num_new_tokens<span class="token operator">=</span>num_new_tokens<span class="token punctuation">,</span> num_new_seqs<span class="token operator">=</span>num_new_seqs<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                <span class="token keyword">break</span>
+
+            <span class="token keyword">if</span> lora_int_id <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token keyword">and</span> curr_loras <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+                curr_loras<span class="token punctuation">.</span>add<span class="token punctuation">(</span>lora_int_id<span class="token punctuation">)</span>
+
+            <span class="token comment"># 如果能走到这步，说明可向running队列转移了。先把当前seq_group从swap队列踢出来</span>
+            <span class="token comment"># 再把CPU上的blocks转移到GPU block上</span>
+            swapped_queue<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>_swap_in<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> blocks_to_swap_in<span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>_append_slots<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> blocks_to_copy<span class="token punctuation">)</span>
+            <span class="token comment"># 判断是不是预填充，将这个seq_group加入不同的分组</span>
+            is_prefill <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>is_prefill<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token keyword">if</span> is_prefill<span class="token punctuation">:</span>
+                prefill_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>ScheduledSequenceGroup<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> token_chunk_size<span class="token operator">=</span>num_new_tokens<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+                decode_seq_groups<span class="token punctuation">.</span>append<span class="token punctuation">(</span>ScheduledSequenceGroup<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> token_chunk_size<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+            <span class="token comment"># 将这个马上上岸的seq_group的tokens和seqs数量更新到budget中</span>
+            budget<span class="token punctuation">.</span>add_num_batched_tokens<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_new_tokens<span class="token punctuation">)</span>
+            budget<span class="token punctuation">.</span>add_num_seqs<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">,</span> num_new_seqs<span class="token punctuation">)</span>
+
+        swapped_queue<span class="token punctuation">.</span>extendleft<span class="token punctuation">(</span>leftover_swapped<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> SchedulerSwappedInOutputs<span class="token punctuation">(</span>
+                decode_seq_groups<span class="token operator">=</span>decode_seq_groups<span class="token punctuation">,</span>
+                prefill_seq_groups<span class="token operator">=</span>prefill_seq_groups<span class="token punctuation">,</span>
+                blocks_to_swap_in<span class="token operator">=</span>blocks_to_swap_in<span class="token punctuation">,</span>
+                blocks_to_copy<span class="token operator">=</span>blocks_to_copy<span class="token punctuation">,</span>
+                num_lookahead_slots<span class="token operator">=</span>self<span class="token punctuation">.</span>_get_num_lookahead_slots<span class="token punctuation">(</span>
+                        is_prefill<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                infeasible_seq_groups<span class="token operator">=</span>infeasible_seq_groups<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+</code></pre>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>

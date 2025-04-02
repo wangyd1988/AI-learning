@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/weixin_42479327/article/details/141496484" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      vllm源码解析(一)：整体架构与推理代码_vlllm-CSDN博客
+     </title>
+     <meta content="vlllm" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"vlllm"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读8.1k次，点赞55次，收藏60次。vlllm官方代码更新频发,每个版本都有极大变动, 很难说哪个版本好用.第一次阅读vllm源码是0.4.0版本,对这版圈复杂度极高的调度代码印象深刻0.4.1对调度逻辑进行重构,完全大变样, 读代码速度快赶不上迭代的速度了。现在已经更新到0.5.4, 经过长时间观察，发现主要的调度逻辑基本也稳定了下来, 应该可以作为一个固话的版本去阅读。本文解读依据vllm 0.5.4版本. 没有修改任何代码,大家不必担心夹带私货！打算以五篇文章的篇幅剖析vllm，希望能对大家有所帮助。_vlllm" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-850e130245.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-whitemove/skin-whitemove-2af9149bdc.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            vllm源码解析(一)：整体架构与推理代码
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/weixin_42479327" rel="noopener" target="_blank" title="弈秋001">
+              弈秋001
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUpTime2.png"/>
+             <span class="time">
+              已于 2024-09-08 22:03:47 修改
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量8.1k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                60
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            55
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' href="https://so.csdn.net/so/search/s.do?q=chatgpt&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              chatgpt
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' href="https://so.csdn.net/so/search/s.do?q=gpt-3&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              gpt-3
+             </a>
+            </div>
+           </div>
+           <div class="up-time">
+            <span>
+             于 2024-09-03 23:08:46 首次发布
+            </span>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/weixin_42479327/article/details/141496484" target="_blank">
+               https://blog.csdn.net/weixin_42479327/article/details/141496484
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-light" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <p>
+            vlllm官方代码更新频发,每个版本都有极大变动, 很难说哪个版本好用.
+            <br/>
+            第一次阅读vllm源码是0.4.0版本,对这版圈复杂度极高的调度代码印象深刻
+            <br/>
+            0.4.1对调度逻辑进行重构,完全大变样, 读代码速度快赶不上迭代的速度了。
+            <br/>
+            现在已经更新到0.5.4, 经过长时间观察，发现主要的调度逻辑基本也稳定了下来, 应该可以作为一个固话的版本去阅读。
+           </p>
+           <p>
+            本文解读依据vllm 0.5.4版本. 没有修改任何代码,大家不必担心夹带私货！
+            <br/>
+            打算以六篇文章的篇幅剖析vllm，希望能对大家有所帮助。
+           </p>
+           <p>
+            注解代码链接:
+            <br/>
+            <a href="https://github.com/yblir/vllm-learn">
+             https://github.com/yblir/vllm-learn
+            </a>
+           </p>
+           <p>
+            参考文献：
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/691038809" rel="nofollow">
+             https://zhuanlan.zhihu.com/p/691038809
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/681716326" rel="nofollow">
+             https://zhuanlan.zhihu.com/p/681716326
+            </a>
+           </p>
+           <h2>
+            <a id="__14">
+            </a>
+            一 大模型推理流程
+           </h2>
+           <p>
+            在解析vllm源码前，我们先来回顾下llm推理流程。一个典型的推理过程如下:
+           </p>
+           <p>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/0ffab76d627746169ef8dcb76013fc85.png"/>
+           </p>
+           <p>
+            ①
+            <strong>
+             prefill
+            </strong>
+            ：预填充阶段，把整段prompt喂给大模型做推理，获得kv-cache并保存。
+            <br/>
+            ②
+            <strong>
+             decode
+            </strong>
+            ：大模型本质是个自回归模型，因此生成阶段，首先根据prompt中最后一个token的kv（input token 4）计算获得第一个推理结果（北），并保存对应的kv-cache(output token 1), 这个过程算一次推理；之后将 北 字作为输入（首次推理的输入是prompt，以后模型输入都是上次的生成token, 当然过
+            <strong>
+             程中要用到之前保存的kv-cache
+            </strong>
+            ），做同样的推理生成 京 字，直到推理结束。
+           </p>
+           <p>
+            由于Decode阶段是逐一生成token，因此不能像prefill阶段那样能做大段prompt的并行计算，所以在LLM推理过程中，Decode阶段的耗时一般是更大的，单步生成token的耗时约占总推理时长的90%。
+           </p>
+           <p>
+            上述推理过程使用到了kv-cache技术，这里有些问题需要解决：
+            <br/>
+            · 随着生成token的增多，kv-cache长度也变大，对gpu显存造成压力
+            <br/>
+            · 生成的token长度无法预知，因此不能提前预知kv-cache所需的存储空间，给推理工作造成很大不确定性
+           </p>
+           <p>
+            vllm就是为解决上述问题而生，vllm的核心就是如何优化kv-cache，节省显存提高推理吞吐量。
+            <br/>
+            调用方法也很简单，以下是qwen2 vllm推理代码：
+           </p>
+           <pre><code class="prism language-python"><span class="token comment"># -*- coding: utf-8 -*-</span>
+<span class="token comment"># @Time    : 2024/8/18 20:14</span>
+<span class="token comment"># @Author  : yblir</span>
+<span class="token comment"># @File    : qwen2_vllm_inference.py</span>
+<span class="token comment"># explain  : </span>
+<span class="token comment"># =======================================================</span>
+<span class="token keyword">import</span> os
+<span class="token keyword">import</span> sys
+
+sys<span class="token punctuation">.</span>path<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token string">'/mnt/e/PyCharm/insteresting/vllm-0.5.4/'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">from</span> vllm_module <span class="token keyword">import</span> LLM<span class="token punctuation">,</span> SamplingParams
+<span class="token comment"># from vllm import LLM, SamplingParams</span>
+<span class="token keyword">from</span> transformers <span class="token keyword">import</span> AutoTokenizer
+
+os<span class="token punctuation">.</span>environ<span class="token punctuation">[</span><span class="token string">'CUDA_VISIBLE_DEVICES'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'0'</span>
+os<span class="token punctuation">.</span>environ<span class="token punctuation">[</span><span class="token string">'CUDA_LAUNCH_BLOCKING'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'1'</span>
+model_path <span class="token operator">=</span> <span class="token string">'/mnt/e/PyCharm/PreTrainModel/qwen2_15b_instruct'</span>
+<span class="token comment"># model_path = '/media/xk/D6B8A862B8A8433B/data/qwen2-15b-instruct'</span>
+
+params <span class="token operator">=</span> <span class="token punctuation">{<!-- --></span><span class="token string">"repetition_penalty"</span><span class="token punctuation">:</span> <span class="token number">1.1</span><span class="token punctuation">,</span>
+          <span class="token string">"temperature"</span>       <span class="token punctuation">:</span> <span class="token number">0.7</span><span class="token punctuation">,</span>
+          <span class="token string">'n'</span>                 <span class="token punctuation">:</span> <span class="token number">4</span><span class="token punctuation">,</span>
+          <span class="token string">"top_p"</span>             <span class="token punctuation">:</span> <span class="token number">0.8</span><span class="token punctuation">,</span>
+          <span class="token string">"top_k"</span>             <span class="token punctuation">:</span> <span class="token number">20</span><span class="token punctuation">,</span> <span class="token punctuation">}</span>
+sample_params <span class="token operator">=</span> SamplingParams<span class="token punctuation">(</span><span class="token operator">**</span>params<span class="token punctuation">)</span>
+llm <span class="token operator">=</span> LLM<span class="token punctuation">(</span>model<span class="token operator">=</span>model_path<span class="token punctuation">,</span>
+          dtype<span class="token operator">=</span><span class="token string">'half'</span>
+            <span class="token comment"># dtype='float16'</span>
+          <span class="token comment"># 把模型层均分到n个gpu上, 而不是运行n个完整模型</span>
+          <span class="token comment"># tensor_parallel_size=1</span>
+          <span class="token comment"># gpu利用率最大70%</span>
+          <span class="token comment"># gpu_memory_utilization=0.7,</span>
+          <span class="token punctuation">)</span>
+tokenizer <span class="token operator">=</span> AutoTokenizer<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span>model_path<span class="token punctuation">,</span> <span class="token punctuation">)</span>
+
+<span class="token comment"># 构造模板</span>
+prompt <span class="token operator">=</span> <span class="token string">'介绍下京杭大运河'</span>
+messages <span class="token operator">=</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{<!-- --></span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'system'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> <span class="token string">'你是一个诗人'</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{<!-- --></span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'user'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> prompt<span class="token punctuation">}</span>
+<span class="token punctuation">]</span>
+
+text <span class="token operator">=</span> tokenizer<span class="token punctuation">.</span>apply_chat_template<span class="token punctuation">(</span>conversation<span class="token operator">=</span>messages<span class="token punctuation">,</span> tokenize<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span> add_generation_prompt<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+
+messages2 <span class="token operator">=</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{<!-- --></span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'system'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> <span class="token string">'你是一个诗人'</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{<!-- --></span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'user'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> <span class="token string">'how far you go'</span><span class="token punctuation">}</span>
+<span class="token punctuation">]</span>
+
+text2 <span class="token operator">=</span> tokenizer<span class="token punctuation">.</span>apply_chat_template<span class="token punctuation">(</span>conversation<span class="token operator">=</span>messages2<span class="token punctuation">,</span> tokenize<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span> add_generation_prompt<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+
+messages3 <span class="token operator">=</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{<!-- --></span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'system'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> <span class="token string">'你是一个诗人'</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{<!-- --></span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'user'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> <span class="token string">'中国首都城市什么名字'</span><span class="token punctuation">}</span>
+<span class="token punctuation">]</span>
+
+text3 <span class="token operator">=</span> tokenizer<span class="token punctuation">.</span>apply_chat_template<span class="token punctuation">(</span>conversation<span class="token operator">=</span>messages3<span class="token punctuation">,</span> tokenize<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span> add_generation_prompt<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+<span class="token comment"># print(text)</span>
+outputs <span class="token operator">=</span> llm<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>
+        <span class="token comment"># 当tokenizer.apply_chat_templat中 tokenize为 False 时激活prompts</span>
+        prompts<span class="token operator">=</span><span class="token punctuation">[</span>text<span class="token punctuation">,</span>text2<span class="token punctuation">,</span>text3<span class="token punctuation">]</span><span class="token punctuation">,</span>
+
+        <span class="token comment"># 当tokenizer.apply_chat_templat中 tokenize为 True 时激活prompt_token_ids,与prompts二选一</span>
+        <span class="token comment"># prompt_token_ids=[text,text2,text3],</span>
+
+        sampling_params<span class="token operator">=</span>sample_params
+<span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> output <span class="token keyword">in</span> outputs<span class="token punctuation">:</span>
+    <span class="token comment"># prompt = output.prompt</span>
+    <span class="token comment"># print(prompt)</span>
+    <span class="token comment"># print(output)</span>
+    <span class="token comment"># print('------------------------------------------')</span>
+    <span class="token keyword">for</span> i<span class="token punctuation">,</span>item <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span><span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>output<span class="token punctuation">.</span>outputs<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>text<span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>output<span class="token punctuation">.</span>outputs<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>token_ids<span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'------------------------------------------\n'</span><span class="token punctuation">)</span>
+
+
+</code></pre>
+           <p>
+            看起来很简单吧，似乎只要2步：只要把模型初始化，再调用generate方法就搞定了。实际上这两步的后面是耦合了调度与模型改造的复杂工程，本文将深度剖析潜藏在背后的源码。
+           </p>
+           <h2>
+            <a id="_vllm__116">
+            </a>
+            二 vllm 原理分析
+           </h2>
+           <p>
+            vllm管理kv-cache的技术称为
+            <strong>
+             PagedAttention
+            </strong>
+            ，原理类似于虚拟内存分页管理技术。
+            <br/>
+            正常推理流程中，生成的token长度无法预知，因此会
+            <strong>
+             最大化分配
+            </strong>
+            一块连续显存作为kv-cache的存储空间，可能到推理结束时这些空间大部分都用不到，而且这是为当前prompt分配的，其他prompt不能使用，造成极大浪费。
+            <br/>
+            换个思路，如果把显存切分成多个连续小段是否可以呢！动态分配显存小段与生成的kv-cache 之间的存储关系，这样可以最大限度地使用显存，达到提升限度推理吞吐量的目的。
+            <br/>
+            这种方法称为PagedAttention，主要有3个模块组成：
+            <strong>
+             logical kv blocks, block table, physical kv blocks.
+            </strong>
+            原理如下图所示，下面我们来逐一解析。
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/fa52be0a9a1c492ca2e08c94b0515d8a.png"/>
+           </p>
+           <ol>
+            <li>
+             <strong>
+              logical kv blocks
+             </strong>
+             ：逻辑表， 不实际存储kv-cache,可以理解为C++语言中的指针，prefill和decode生成的kv-cache的"地址指针"存储在logical kv blocks， 逻辑表对"指针"的存储是连续的。不过在新版vllm中，logical kv这个东西已经删除了，当然逻辑块只是形式上消失了，实际上它依然隐藏在Sequence类的各个属性中，解释起来比较复杂，我们在以后的代码分析中再详解。
+            </li>
+            <li>
+             <strong>
+              physical kv blocks
+             </strong>
+             ：可理解为实际存储token的物理显存，vllm中一个块默认为16（可以装16个token的k/v值），图中展示每个block大小为4。每个block内部是连续的，但block之间是不连续的，那么如何才能与logical保持对齐呢？这就需要block table了
+            </li>
+            <li>
+             <strong>
+              block table
+             </strong>
+             ：存储logical与physical关系的映射表。如logical block0 -&gt; physical block7. block table除了记录映射关系，还记录当前block槽位填充情况。如physical block7已经填满，因此filled==4； physical block1 槽位填充了3个，再填入一个father单词的token，filled会变为4。
+            </li>
+           </ol>
+           <p>
+            多batch并行推理时，会有logical blocks映射到同一个physical blocks上，大家看图就能理解:
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/7a9aff61b42e423881fd8e499a19e48e.png"/>
+           </p>
+           <p>
+            我们考虑另外一个问题，llm推理有时会有多个输出，这种情况PagedAttention该如何操作呢？
+            <br/>
+            多输出有两种情况：
+            <br/>
+            <strong>
+             Parallel Sampling
+            </strong>
+            :
+            <strong>
+             如果指定了n个输出，就把prompt复制n份
+            </strong>
+            ，拼成一个batch喂给模型做推理。这时会产生prompt 的kv-cache重复存储，对这个重复的优化是另外问题，这里不展开了。
+            <br/>
+            <strong>
+             Beam Search
+            </strong>
+            ：集束搜索，
+            <strong>
+             每个decode阶段，产生top k个token（k也被称为束宽）
+            </strong>
+            ，对应着当前时刻的top k个序列。它们的前置token也会有大量的kv-cache重复。
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/7d42115fae214e2bb10b836762cbd4e3.png"/>
+           </p>
+           <p>
+            前面提到Parallel Sampling模式会把prompt复制 n份，如Figure 8所示，对应sample A1和sample A2，它们
+            <strong>
+             各自维护一套
+            </strong>
+            自己的logical blocks，由于内容完全相同，它们共享一套physical blocks，其中每个physical block对应
+            <strong>
+             引用计数ref count
+            </strong>
+            都为2. 进入推理阶段后，A1和A2
+            <strong>
+             各自独立
+            </strong>
+            做推理，如果生成了相同的token，会把新token kv-cache加入共享的physical block中。如果生成了不同的token（如图中的mothers和fathers），会
+            <strong>
+             触发copy-on-write机制
+            </strong>
+            ，即在gpu上开辟一个新的block，如physical block1复制内容到block2，之后各自再装入生成的不同token, 同时，block1 计数-1，block2计数+1。这种操作符合vllm核心思想：节省KV cache显存，对于相同数据对应的KV cache，能复用则尽量复用；无法复用时，再考虑开辟新的物理空间。
+           </p>
+           <p>
+            vllm也有对Beam Search有优化，但这不是本文重点，暂时忽略。
+           </p>
+           <p>
+            目前为止，我们仅回顾与源码解析相关知识，PagedAttention还有许多东西没有讲到，说太多技术点反而会让人迷失在各种细节中，有兴趣可以自行去查资料了解。
+           </p>
+           <h2>
+            <a id="_vllm_143">
+            </a>
+            三 vllm中一些基本概念
+           </h2>
+           <p>
+            在解析源码前， 我们还需要清楚理解vllm一些概念的意思。
+           </p>
+           <h3>
+            <a id="31_vllm__146">
+            </a>
+            3.1 vllm 数据结构
+           </h3>
+           <p>
+            如第一章中图片上展示的，一个prompt的典型例子如下：
+           </p>
+           <pre><code class="prism language-python"><span class="token operator">&lt;</span><span class="token operator">|</span>im_start<span class="token operator">|</span><span class="token operator">&gt;</span>system
+你是一个诗人<span class="token operator">&lt;</span><span class="token operator">|</span>im_end<span class="token operator">|</span><span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">|</span>im_start<span class="token operator">|</span><span class="token operator">&gt;</span>user
+中国首都是<span class="token operator">&lt;</span><span class="token operator">|</span>im_end<span class="token operator">|</span><span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">|</span>im_start<span class="token operator">|</span><span class="token operator">&gt;</span>assistant
+</code></pre>
+           <p>
+            正常推理过程中，1个请求（batchsize）可能包含多个prompts，在vllm中，一个prompt才被看做一个请求；一个prompt可能输出多个outputs，这时每对prompt -&gt; output序列称为一个seq序列，每条seq都维护着独立的status,可理解为当前时刻所处的推理状态，推理是否完结等:
+           </p>
+           <ul>
+            <li>
+             WAITING：正在waiting队列中。waiting队列中的序列都没有做过prefill。
+            </li>
+            <li>
+             RUNNING：正在running队列中，即已经开始做推理。
+            </li>
+            <li>
+             SWAPPED：正在swapped队列中，表示此时gpu资源不足，相关的seq_group被抢占。
+            </li>
+           </ul>
+           <p>
+            当然还有finished状态，主要记录因何种原因导致finished：
+           </p>
+           <ul>
+            <li>
+             FINISHED_STOPPED：正常执行完毕，例如碰到符号，该seq的推理正常结束了
+            </li>
+            <li>
+             FINISHED_LENGTH_CAPPED：因为seq的长度达到最大长度限制，而结束推理
+            </li>
+            <li>
+             FINISHED_ABORTED：因不正常状态，而被终止的推理。例如客户端断开连接，则服务器会终止相关seq的推理
+            </li>
+            <li>
+             FINISHED_IGNORED：因prompt过长而被终止执行的推理。本质上也是受到长度限制
+            </li>
+           </ul>
+           <p>
+            从上面可以看出单独管理seq有点复杂，所以我们需要
+            <strong>
+             统一管理
+            </strong>
+            一个prompt和它对应的所有outputs，称为一个
+            <strong>
+             seq_group
+            </strong>
+            。seq_group是vllm推理管理数据的基本单元。vllm 中设定一个seq_group中所有seq共享共一个prompt。这些变量的包含关系如下：
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/3fa1ed9168be4257a45ff0000b8753f4.jpeg">
+             <br/>
+             这张图是从某位大佬的文章中取来的，他用的版本应该是0.4.0，在0.5.4版本中，Sequence类已删除了logical_token_blocks属性和_append_tokens_to_blocks方法，对应的功能转移到其他代码中了。不过从图中，仍能清晰看到二者的从属关系。
+            </img>
+           </p>
+           <h3>
+            <a id="32__172">
+            </a>
+            3.2 调度原则
+           </h3>
+           <p>
+            前面提到vllm的核心是对kv-cache的优化，而这种优化是通过
+            <strong>
+             调度系统Scheduler
+            </strong>
+            来完成的。
+            <br/>
+            Scheduler维护着三个双端队列, 在3.1也有提到：
+            <br/>
+            <strong>
+             waiting，running，swapped。
+            </strong>
+            <br/>
+            每完成一次推理，都要对这三个队列进行动态调整，在下一次推理时实现最大限度提升吞吐量的目的.
+            <br/>
+            这三个队列的作用如下：
+           </p>
+           <ul>
+            <li>
+             <strong>
+              waiting
+             </strong>
+             : 所有输入的模型的prompt都会被加入waiting队列中，这是输入数据的入口。这时的seq只有一条，就是prompt，连prefill都还没做，不管在外部设置了多输出还是Beam Search，此时
+             <strong>
+              只有这一条数据
+             </strong>
+             。waiting队列另一个数据来源是running队列。
+            </li>
+            <li>
+             <strong>
+              running
+             </strong>
+             : 存储着上一次被送去做推理seq_groups，在下一次做推理前， 要对running队列中的seq_groups做检查，
+             <strong>
+              看系统是否有足够资源让它们留在队列中继续做下一次推理
+             </strong>
+             。如果当前系统资源不满足做一次推理，就把seq_group一条条pop()出来，转移到waiting或swapped队列中，直到满足下一次推理的资源需求。当然，running队列也会从waiting和swapped队列拿数据过来做推理，至于转移，怎么拿，接下来我们会详细分析。
+            </li>
+            <li>
+             <strong>
+              swapped
+             </strong>
+             : 可以理解为
+             <strong>
+              失败者集散地
+             </strong>
+             ，都是不满足条件（gpu blocks资源不足或某些
+             <strong>
+              推理参数超过阈值
+             </strong>
+             ），被从running队列中踢出去的，等条件满足时，还会被从新加入running队列做推理。
+            </li>
+           </ul>
+           <p>
+            上面提到了三个队列间的交互，它们的交互依据就是vllm的调度原则。
+            <br/>
+            vllm调度的原则可以总结如下，了解了下面的处理逻辑，就能理解三个队列的用途及它们之间相互转移数据的规则：
+           </p>
+           <ul>
+            <li>
+             <strong>
+              先来的请求先被服务（First-Come-First-Serve, FCFS）
+             </strong>
+            </li>
+            <li>
+             <strong>
+              如有抢占的需要，后来的请求先被抢占（preemption）
+             </strong>
+            </li>
+           </ul>
+           <p>
+            FCFS大家都很好理解，我们来看下对
+            <strong>
+             preemption
+            </strong>
+            的处理：
+           </p>
+           <p>
+            抢占发生在推理阶段，vllm核心是最大限度优化吞吐量，推理过程中gpu显存不足或
+            <strong>
+             推理的tokens和seqs数量超过设定阈值
+            </strong>
+            ，都会发生抢占，
+            <strong>
+             即暂时中断一些任务的执行，释放gpu上与它们相关的kv-cache,等资源充足，再恢复它们的执行
+            </strong>
+            。针对preemption有两种处理方式：
+           </p>
+           <p>
+            ①
+            <strong>
+             如果parallel sampling=1
+            </strong>
+            ，直接释放所有physical blocks，将任务重新放回wait队列（放到队列头部，下一次最先取它），
+            <strong>
+             重新
+            </strong>
+            从prefill阶段开始做推理。
+            <br/>
+            ②
+            <strong>
+             如果parallel sampling&gt;1
+            </strong>
+            , 如果将它们直接丢掉，那未免过于浪费, 先把处理的好的blocks交换到CPU上，等gpu显存充足，再把这些blocks从CPU加载回来。
+           </p>
+           <p>
+            上面提到超过推理参数超过阈值也会导致抢占，这里的阈值指
+            <strong>
+             每次允许推理的最大seqs数量和最大tokens数量
+            </strong>
+            。在vllm 0.5.4版本中，由一个类budget的对象管理，每次推理前都要
+            <strong>
+             重新构建
+            </strong>
+            一个budget类对象，统计seqs和tokens数量是否越界。
+           </p>
+           <p>
+            至此，我们可以得出结论，判断一个seq_group是否被抢占的因素有三个：
+            <strong>
+             gpu blocks数量是否充足，当前调度能处理的seqs和tokens是否超过数量阈值。
+            </strong>
+           </p>
+           <h3>
+            <a id="33_vllm_202">
+            </a>
+            3.3 vllm推理流程
+           </h3>
+           <p>
+            有了上面的知识储备，我们就能理解一个seq从开始到结束，整个生命周期内的历程：
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/f115034cfd9548f9a92a5117201e4a2c.png"/>
+           </p>
+           <ul>
+            <li>
+             ①
+             <strong>
+              每条prompt处理成Sequence对象，然后Sequence包装成seq_group
+             </strong>
+             ，这条seq_group会存入waiting队列。此时只有一条seq，就是prompt，
+             <strong>
+              连预填充prefill都没做
+             </strong>
+             。status为waiting
+            </li>
+            <li>
+             ② 调度器选中这条seq_group做推理，图中我们展示两种情况，4输出和1输出，因此会产生4条seq和1条seq, 其中4 seq共享prompt，status为running。
+            </li>
+            <li>
+             ③ 推理一段时间后，gpu blocks资源不足或tokens或seqs数量超出阈值，
+             <strong>
+              发生抢占现象
+             </strong>
+             。多输出的seq_group相关kv blocks会被
+             <strong>
+              swap out
+             </strong>
+             到CPU上；而单输出的seq_group则会把相关的（prefill和decode）kv blocks
+             <strong>
+              释放
+             </strong>
+             ，将seq_group重新放回waiting队列，就像什么都没发生过，幸运的是会被放到waiting队列最前面。
+            </li>
+            <li>
+             ④ 系统资源充足了，被swapped的seq_group会从CPU上
+             <strong>
+              swap_in
+             </strong>
+             gpu继续推理；单输出seq_group则
+             <strong>
+              从prefill开始重新奋斗
+             </strong>
+             。
+            </li>
+            <li>
+             ⑤⑥ 多输出
+             <strong>
+              必定会出现某条seq先推理结束
+             </strong>
+             ，此时还活跃的seq数减1， 变为3个，当某条seq推理完结，会被标记为finished, 以后不再调用资源处理它，只有等seq_group中所有seq都推理结束，该seq_group才算推理完成。
+            </li>
+           </ul>
+           <p>
+            <strong>
+             注意：并不是每个seq_group都会经历抢占，如果系统资源充足，会跳过抢占的，此时的执行次序为：①②⑤⑥ 或 ①②⑤
+            </strong>
+           </p>
+           <h2>
+            <a id="__214">
+            </a>
+            四 推理代码解析
+           </h2>
+           <p>
+            经过漫长的知识铺垫，我们终于能看到vllm的核心代码了
+            <br/>
+            我们先略过初始化阶段，直接从generate开始，遇到重要知识点再现场分析
+           </p>
+           <pre><code class="prism language-python">outputs <span class="token operator">=</span> llm<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>
+        <span class="token comment"># 当tokenizer.apply_chat_templat中 tokenize为 False 时激活prompts</span>
+        prompts<span class="token operator">=</span><span class="token punctuation">[</span>text<span class="token punctuation">,</span>text2<span class="token punctuation">,</span>text3<span class="token punctuation">]</span><span class="token punctuation">,</span>
+
+        <span class="token comment"># 当tokenizer.apply_chat_templat中 tokenize为 True 时激活prompt_token_ids,与prompts二选一</span>
+        <span class="token comment"># prompt_token_ids=[text,text2,text3],</span>
+
+        sampling_params<span class="token operator">=</span>sample_params
+<span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            vllm推理代码真的很简洁，只要一行代码就行，背后逻辑就极其复杂了，而且每个版本都有很大改动。
+           </p>
+           <ul>
+            <li>
+             vllm/entrypoints/llm.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">generate</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            prompts<span class="token punctuation">:</span> Union<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>PromptInputs<span class="token punctuation">,</span> Sequence<span class="token punctuation">[</span>PromptInputs<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> List<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            sampling_params<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">,</span> Sequence<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            prompt_token_ids<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>List<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">,</span> List<span class="token punctuation">[</span>List<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            use_tqdm<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+            lora_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>List<span class="token punctuation">[</span>LoRARequest<span class="token punctuation">]</span><span class="token punctuation">,</span> LoRARequest<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            prompt_adapter_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>PromptAdapterRequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            guided_options_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>LLMGuidedOptions<span class="token punctuation">,</span> GuidedDecodingRequest<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>RequestOutput<span class="token punctuation">]</span><span class="token punctuation">:</span>
+
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>llm_engine<span class="token punctuation">.</span>model_config<span class="token punctuation">.</span>embedding_mode<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span>
+                    <span class="token string">"LLM.generate() is only supported for generation models (XForCausalLM)."</span>
+            <span class="token punctuation">)</span>
+
+        <span class="token comment"># cast 表面看是类型转换,但实践上没做任何事,直接原样返回, 那么这个调用的意义是什么 ?</span>
+        <span class="token keyword">if</span> prompt_token_ids <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            inputs <span class="token operator">=</span> self<span class="token punctuation">.</span>_convert_v1_inputs<span class="token punctuation">(</span>
+                    prompts<span class="token operator">=</span>cast<span class="token punctuation">(</span>Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> List<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span> prompts<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    prompt_token_ids<span class="token operator">=</span>prompt_token_ids<span class="token punctuation">,</span>
+            <span class="token punctuation">)</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            inputs <span class="token operator">=</span> cast<span class="token punctuation">(</span>Union<span class="token punctuation">[</span>PromptInputs<span class="token punctuation">,</span> Sequence<span class="token punctuation">[</span>PromptInputs<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span> prompts<span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>guided_options_request<span class="token punctuation">,</span> <span class="token builtin">dict</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>guided_options_request<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">1</span><span class="token punctuation">:</span>
+                <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span>
+                        <span class="token string">"You can only use one guided decoding but multiple is "</span>
+                        <span class="token string-interpolation"><span class="token string">f"specified: </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>guided_options_request<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+            guided_options_request <span class="token operator">=</span> GuidedDecodingRequest<span class="token punctuation">(</span><span class="token operator">**</span>guided_options_request<span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> sampling_params <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            <span class="token comment"># Use default sampling params.</span>
+            sampling_params <span class="token operator">=</span> SamplingParams<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># 校验入参，并将一个batchsize中的每条prompt处理成Sequence对象，然后Sequence包装成SequenceGroup组，</span>
+        <span class="token comment"># 1. prompt-&gt;seq-&gt;seq_group, 2. 将seq_group加入合适gpu维护的scheduler的waiting队列,等待处理</span>
+        self<span class="token punctuation">.</span>_validate_and_add_requests<span class="token punctuation">(</span>
+                inputs<span class="token operator">=</span>inputs<span class="token punctuation">,</span>
+                params<span class="token operator">=</span>sampling_params<span class="token punctuation">,</span>
+                lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">,</span>
+                prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">,</span>
+                guided_options<span class="token operator">=</span>guided_options_request<span class="token punctuation">)</span>
+
+        <span class="token comment"># 首先从scheduler的waiting队列取数据，加入到running队列，再从running队列</span>
+        <span class="token comment"># 中取数据推理，若物理blocks不够用，从running转入swap队列</span>
+        outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>_run_engine<span class="token punctuation">(</span>use_tqdm<span class="token operator">=</span>use_tqdm<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> LLMEngine<span class="token punctuation">.</span>validate_outputs<span class="token punctuation">(</span>outputs<span class="token punctuation">,</span> RequestOutput<span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            generate 代码中最重要的模块有两个，
+            <strong>
+             _validate_and_add_requests（数据预处理），_run_engine（实际推理）
+            </strong>
+            。
+           </p>
+           <h2>
+            <a id="41__287">
+            </a>
+            4.1 数据预处理
+           </h2>
+           <ul>
+            <li>
+             vllm/entrypoints/llm.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_validate_and_add_requests</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            inputs<span class="token punctuation">:</span> Union<span class="token punctuation">[</span>PromptInputs<span class="token punctuation">,</span> Sequence<span class="token punctuation">[</span>PromptInputs<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            params<span class="token punctuation">:</span> Union<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">,</span> Sequence<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">]</span><span class="token punctuation">,</span> PoolingParams<span class="token punctuation">,</span> Sequence<span class="token punctuation">[</span>PoolingParams<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            lora_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>Sequence<span class="token punctuation">[</span>LoRARequest<span class="token punctuation">]</span><span class="token punctuation">,</span> LoRARequest<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            prompt_adapter_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>PromptAdapterRequest<span class="token punctuation">]</span><span class="token punctuation">,</span>
+            guided_options<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>GuidedDecodingRequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token comment"># 如果输入是一条prompt,而不是list,会在此处自动转换为list</span>
+        <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>inputs<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">dict</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token comment"># Convert a single prompt to a list.</span>
+            inputs <span class="token operator">=</span> <span class="token punctuation">[</span>inputs<span class="token punctuation">]</span>
+           
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+		
+        <span class="token comment"># Add requests to the engine.</span>
+        <span class="token comment"># 遍历每一条prompt，1个prompt算1个request，需要有1个全局唯一的request_id</span>
+        <span class="token keyword">for</span> i<span class="token punctuation">,</span> request_inputs <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>inputs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>_add_request<span class="token punctuation">(</span>
+                    request_inputs<span class="token punctuation">,</span>
+                    params<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>params<span class="token punctuation">,</span> Sequence<span class="token punctuation">)</span> <span class="token keyword">else</span> params<span class="token punctuation">,</span>
+                    lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>lora_request<span class="token punctuation">,</span> Sequence<span class="token punctuation">)</span> <span class="token keyword">else</span> lora_request<span class="token punctuation">,</span>
+                    prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">)</span>
+                    
+    <span class="token comment"># ==========================================================================================================</span>
+    <span class="token keyword">def</span> <span class="token function">_add_request</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            inputs<span class="token punctuation">:</span> PromptInputs<span class="token punctuation">,</span>
+            params<span class="token punctuation">:</span> Union<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">,</span> PoolingParams<span class="token punctuation">]</span><span class="token punctuation">,</span>
+            lora_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>List<span class="token punctuation">[</span>LoRARequest<span class="token punctuation">]</span><span class="token punctuation">,</span> LoRARequest<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            prompt_adapter_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>PromptAdapterRequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token comment"># 每个prompt赋1个全局唯一的request_id</span>
+        request_id <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span><span class="token builtin">next</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>request_counter<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>llm_engine<span class="token punctuation">.</span>add_request<span class="token punctuation">(</span>
+                request_id<span class="token punctuation">,</span>
+                inputs<span class="token punctuation">,</span>
+                params<span class="token punctuation">,</span>
+                lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">,</span>
+                prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">)</span>
+</code></pre>
+           <ul>
+            <li>
+             vllm/engine/llm_engine.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">  <span class="token comment"># ==========================================================================================================</span>
+    <span class="token keyword">def</span> <span class="token function">add_request</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            request_id<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>  <span class="token comment"># 每个请求的唯一id,在vLLM内部，1条prompt算1个请求，会附给1个请求id</span>
+            inputs<span class="token punctuation">:</span> PromptInputs<span class="token punctuation">,</span>  <span class="token comment"># prompt</span>
+            params<span class="token punctuation">:</span> Union<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">,</span> PoolingParams<span class="token punctuation">]</span><span class="token punctuation">,</span>  <span class="token comment"># 用于采样的参数（温度、topk等）</span>
+            arrival_time<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">float</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>  <span class="token comment"># 请求到达的时间。如果是None，则用当前系统时间</span>
+            lora_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>LoRARequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>  <span class="token comment"># 如果是用lora模型做推理，相关的lora请求</span>
+            trace_headers<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Mapping<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            prompt_adapter_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>PromptAdapterRequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> lora_request <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span> <span class="token keyword">and</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>lora_config<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Got lora_request </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>lora_request<span class="token punctuation">}</span></span><span class="token string"> but LoRA is not enabled!"</span></span><span class="token punctuation">)</span>
+        <span class="token comment"># 设置该请求的到达时间</span>
+        <span class="token keyword">if</span> arrival_time <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            arrival_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># processed_inputs:dict,= {'prompts':xxx,'prompts_token_ids':xxx,'multi_modal_data':None}</span>
+        processed_inputs <span class="token operator">=</span> self<span class="token punctuation">.</span>process_model_inputs<span class="token punctuation">(</span>
+                request_id<span class="token operator">=</span>request_id<span class="token punctuation">,</span>
+                inputs<span class="token operator">=</span>inputs<span class="token punctuation">,</span>
+                lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">,</span>
+                prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">)</span>
+        <span class="token comment"># 1. prompt-&gt;seq-&gt;seq_group, 2. 将seq_group加入合适gpu维护的scheduler的waiting队列,等待处理</span>
+        self<span class="token punctuation">.</span>_add_processed_request<span class="token punctuation">(</span>
+                request_id<span class="token operator">=</span>request_id<span class="token punctuation">,</span>
+                processed_inputs<span class="token operator">=</span>processed_inputs<span class="token punctuation">,</span>
+                params<span class="token operator">=</span>params<span class="token punctuation">,</span>
+                arrival_time<span class="token operator">=</span>arrival_time<span class="token punctuation">,</span>
+                lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">,</span>
+                prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">,</span>
+                trace_headers<span class="token operator">=</span>trace_headers<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            我们看到，经过疯狂套娃后，最终实际干活的是
+            <strong>
+             self.process_model_inputs和self._add_processed_request
+            </strong>
+            这两个方法，其他全都是中间商~
+           </p>
+           <ul>
+            <li>
+             vllm/engine/llm_engine.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">process_model_inputs</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            request_id<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+            inputs<span class="token punctuation">:</span> PromptInputs<span class="token punctuation">,</span>
+            lora_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>LoRARequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            prompt_adapter_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>PromptAdapterRequest<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> LLMInputs<span class="token punctuation">:</span>
+        <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>inputs<span class="token punctuation">,</span> <span class="token builtin">str</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            inputs <span class="token operator">=</span> <span class="token punctuation">{<!-- --></span><span class="token string">"prompt"</span><span class="token punctuation">:</span> inputs<span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token string">"prompt_token_ids"</span> <span class="token keyword">not</span> <span class="token keyword">in</span> inputs<span class="token punctuation">:</span>
+            <span class="token comment"># 这个函数就是为了拿到self.tokenizer</span>
+            tokenizer <span class="token operator">=</span> self<span class="token punctuation">.</span>get_tokenizer_group<span class="token punctuation">(</span><span class="token string">"prompts must be None if skip_tokenizer_init is True"</span><span class="token punctuation">)</span>
+            <span class="token comment"># 文字prompt编码成token_id</span>
+            prompt_token_ids <span class="token operator">=</span> tokenizer<span class="token punctuation">.</span>encode<span class="token punctuation">(</span>request_id<span class="token operator">=</span>request_id<span class="token punctuation">,</span>
+                                                prompt<span class="token operator">=</span>inputs<span class="token punctuation">[</span><span class="token string">"prompt"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+                                                lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">)</span>
+        <span class="token comment"># 如果入参前已经做好token_ids,直接取出来用</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            prompt_token_ids <span class="token operator">=</span> inputs<span class="token punctuation">[</span><span class="token string">"prompt_token_ids"</span><span class="token punctuation">]</span>
+
+        <span class="token comment"># 使用未合并的lora才会走进入这个判断分支</span>
+        <span class="token keyword">if</span> prompt_adapter_request<span class="token punctuation">:</span>
+            prompt_token_ids <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">*</span> prompt_adapter_request<span class="token punctuation">.</span>prompt_adapter_num_virtual_tokens <span class="token operator">+</span> prompt_token_ids
+
+        <span class="token comment"># LLMInputs继承自TypedDict,将入参转换为字典</span>
+        <span class="token comment"># llm_inputs = {'prompts':xxx,'prompts_token_ids':xxx,'multi_modal_data':None}</span>
+        llm_inputs <span class="token operator">=</span> LLMInputs<span class="token punctuation">(</span>prompt_token_ids<span class="token operator">=</span>prompt_token_ids<span class="token punctuation">,</span>
+                               prompt<span class="token operator">=</span>inputs<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"prompt"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                               multi_modal_data<span class="token operator">=</span>inputs<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"multi_modal_data"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># todo 使用functools.partial高阶用法,返回的是一个固定llm_inputs参数的函数，真的好用吗？</span>
+        <span class="token comment"># 目前觉得这个函数会拖慢速度,因为每个prompt都要经过这里获得模型架构的操作</span>
+        <span class="token comment"># 目前这个函数,经过多层调用后, 最后原样返回,没对llm_inputs做任何操作</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>input_processor<span class="token punctuation">(</span>llm_inputs<span class="token punctuation">)</span> 
+</code></pre>
+           <p>
+            process_model_inputs功能是把输入的prompt转换为token_id, 结果以
+            <strong>
+             字典
+            </strong>
+            形式输出：
+            <br/>
+            llm_inputs = {‘prompts’:xxx,‘prompts_token_ids’:xxx,‘multi_modal_data’:None}
+           </p>
+           <pre><code class="prism language-python">   <span class="token comment"># ==========================================================================================================</span>
+    
+    <span class="token keyword">def</span> <span class="token function">_add_processed_request</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            request_id<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+            processed_inputs<span class="token punctuation">:</span> LLMInputs<span class="token punctuation">,</span>
+            params<span class="token punctuation">:</span> Union<span class="token punctuation">[</span>SamplingParams<span class="token punctuation">,</span> PoolingParams<span class="token punctuation">]</span><span class="token punctuation">,</span>
+            arrival_time<span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">,</span>
+            lora_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>LoRARequest<span class="token punctuation">]</span><span class="token punctuation">,</span>
+            prompt_adapter_request<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>PromptAdapterRequest<span class="token punctuation">]</span><span class="token punctuation">,</span>
+            trace_headers<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Mapping<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token comment"># Create the sequences.</span>
+        block_size <span class="token operator">=</span> self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>block_size
+        <span class="token comment"># self.seq_counter是在类中初始化，所以可以为每条seq生成不重复的id，</span>
+        <span class="token comment"># seq_id与request_id是两个独立的变量</span>
+        seq_id <span class="token operator">=</span> <span class="token builtin">next</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>seq_counter<span class="token punctuation">)</span>
+        eos_token_id <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_eos_token_id<span class="token punctuation">(</span>lora_request<span class="token punctuation">)</span>
+        <span class="token comment"># seq 包含当前prompt的各种信息:token_id,status(waiting,...), 占用blocks数量(逻辑,物理数量相同)</span>
+        seq <span class="token operator">=</span> Sequence<span class="token punctuation">(</span>seq_id<span class="token punctuation">,</span> processed_inputs<span class="token punctuation">,</span> block_size<span class="token punctuation">,</span> eos_token_id<span class="token punctuation">,</span>
+                       lora_request<span class="token punctuation">,</span> prompt_adapter_request<span class="token punctuation">)</span>
+        <span class="token comment"># 将seq和采样参数合并为seq_group</span>
+        <span class="token comment"># --------------------------------------------------------------------------------------------------------------</span>
+        <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>params<span class="token punctuation">,</span> SamplingParams<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            seq_group <span class="token operator">=</span> self<span class="token punctuation">.</span>_create_sequence_group_with_sampling<span class="token punctuation">(</span>
+                    request_id<span class="token punctuation">,</span>
+                    seq<span class="token punctuation">,</span>
+                    params<span class="token punctuation">,</span>
+                    arrival_time<span class="token operator">=</span>arrival_time<span class="token punctuation">,</span>
+                    lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">,</span>
+                    trace_headers<span class="token operator">=</span>trace_headers<span class="token punctuation">,</span>
+                    prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">)</span>
+        <span class="token keyword">elif</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>params<span class="token punctuation">,</span> PoolingParams<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            seq_group <span class="token operator">=</span> self<span class="token punctuation">.</span>_create_sequence_group_with_pooling<span class="token punctuation">(</span>
+                    request_id<span class="token punctuation">,</span>
+                    seq<span class="token punctuation">,</span>
+                    params<span class="token punctuation">,</span>
+                    arrival_time<span class="token operator">=</span>arrival_time<span class="token punctuation">,</span>
+                    lora_request<span class="token operator">=</span>lora_request<span class="token punctuation">,</span>
+                    prompt_adapter_request<span class="token operator">=</span>prompt_adapter_request<span class="token punctuation">)</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"Either SamplingParams or PoolingParams must be provided."</span><span class="token punctuation">)</span>
+        <span class="token comment"># --------------------------------------------------------------------------------------------------------------</span>
+
+        <span class="token comment"># Add the sequence group to the scheduler with least unfinished seqs.</span>
+        <span class="token comment"># 获得当前每个gpu上还没推理结束的seq_group数量: len(self.waiting) + len(self.running) + len(self.swapped)</span>
+        costs <span class="token operator">=</span> <span class="token punctuation">[</span>scheduler<span class="token punctuation">.</span>get_num_unfinished_seq_groups<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">for</span> scheduler <span class="token keyword">in</span> self<span class="token punctuation">.</span>scheduler<span class="token punctuation">]</span>
+        <span class="token comment"># 找出工作量最少的调度器</span>
+        min_cost_scheduler <span class="token operator">=</span> self<span class="token punctuation">.</span>scheduler<span class="token punctuation">[</span>costs<span class="token punctuation">.</span>index<span class="token punctuation">(</span><span class="token builtin">min</span><span class="token punctuation">(</span>costs<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+        <span class="token comment"># 将当前seq_group加入这个调度器中(根据self.scheduler初始过程可知,每个gpu维护一个调度器,</span>
+        <span class="token comment"># 这条代码的意思就是当前seq_group由工作量最少的gpu负责推理)</span>
+        min_cost_scheduler<span class="token punctuation">.</span>add_seq_group<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            用户输入的prompt经过_validate_and_add_requests处理后，
+            <strong>
+             会封装为seq_group
+            </strong>
+            ，然后将seq_group加入合适gpu维护的scheduler的waiting队列, 等待处理。
+            <br/>
+            seq和seq_group是vllm推理的基本单元，是两个非常重要的概念，我们来直观感受下它们的数据格式：
+           </p>
+           <p>
+            seq:
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/e6c15c6cffff4edaa56cc6d307eb8f25.png"/>
+           </p>
+           <p>
+            seq_group:
+            <br/>
+            初始阶段seqs_dict都只有一个元素，经过prefill后，会扩展为n个元素（n是输出outputs数量）
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/54251d83029e407a9167c605e477e4bd.png"/>
+           </p>
+           <h3>
+            <a id="42__478">
+            </a>
+            4.2 推理流程
+           </h3>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_run_engine</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token punctuation">,</span> use_tqdm<span class="token punctuation">:</span> <span class="token builtin">bool</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>RequestOutput<span class="token punctuation">,</span> EmbeddingRequestOutput<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token comment"># Initialize tqdm.</span>
+        <span class="token keyword">if</span> use_tqdm<span class="token punctuation">:</span>
+            num_requests <span class="token operator">=</span> self<span class="token punctuation">.</span>llm_engine<span class="token punctuation">.</span>get_num_unfinished_requests<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            pbar <span class="token operator">=</span> tqdm<span class="token punctuation">(</span>
+                    total<span class="token operator">=</span>num_requests<span class="token punctuation">,</span>
+                    desc<span class="token operator">=</span><span class="token string">"Processed prompts"</span><span class="token punctuation">,</span>
+                    dynamic_ncols<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>
+                    postfix<span class="token operator">=</span><span class="token string-interpolation"><span class="token string">f"est. speed input: </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span><span class="token number">0</span><span class="token punctuation">:</span><span class="token format-spec">.2f</span><span class="token punctuation">}</span></span><span class="token string"> toks/s, output: </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span><span class="token number">0</span><span class="token punctuation">:</span><span class="token format-spec">.2f</span><span class="token punctuation">}</span></span><span class="token string"> toks/s"</span></span><span class="token punctuation">,</span>
+            <span class="token punctuation">)</span>
+        <span class="token comment"># Run the engine.</span>
+        outputs<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>RequestOutput<span class="token punctuation">,</span> EmbeddingRequestOutput<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        total_in_toks <span class="token operator">=</span> <span class="token number">0</span>
+        total_out_toks <span class="token operator">=</span> <span class="token number">0</span>
+
+        <span class="token comment"># 如果当前调度器中还有没完成推理的请求（调度器中waiting/running/swapped任一队列非空）</span>
+        <span class="token keyword">while</span> self<span class="token punctuation">.</span>llm_engine<span class="token punctuation">.</span>has_unfinished_requests<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token comment"># 执行1次推理调度（step），决定哪些请求的数据可以参与到这次推理中，step输出本次推理结果</span>
+            step_outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>llm_engine<span class="token punctuation">.</span>step<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token comment"># 一次step推理后，如果有请求已经完成了推理，将推理结果装进outputs中，</span>
+            <span class="token keyword">for</span> output <span class="token keyword">in</span> step_outputs<span class="token punctuation">:</span>
+                <span class="token keyword">if</span> output<span class="token punctuation">.</span>finished<span class="token punctuation">:</span>
+                    outputs<span class="token punctuation">.</span>append<span class="token punctuation">(</span>output<span class="token punctuation">)</span>
+                    <span class="token keyword">if</span> use_tqdm<span class="token punctuation">:</span>
+                        <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>output<span class="token punctuation">,</span> RequestOutput<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                            <span class="token comment"># Calculate tokens only for RequestOutput</span>
+                            total_in_toks <span class="token operator">+=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>output<span class="token punctuation">.</span>prompt_token_ids<span class="token punctuation">)</span>
+                            in_spd <span class="token operator">=</span> total_in_toks <span class="token operator">/</span> pbar<span class="token punctuation">.</span>format_dict<span class="token punctuation">[</span><span class="token string">"elapsed"</span><span class="token punctuation">]</span>
+                            total_out_toks <span class="token operator">+=</span> <span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>stp<span class="token punctuation">.</span>token_ids<span class="token punctuation">)</span> <span class="token keyword">for</span> stp <span class="token keyword">in</span> output<span class="token punctuation">.</span>outputs<span class="token punctuation">)</span>
+                            out_spd <span class="token operator">=</span> total_out_toks <span class="token operator">/</span> pbar<span class="token punctuation">.</span>format_dict<span class="token punctuation">[</span><span class="token string">"elapsed"</span><span class="token punctuation">]</span>
+                            pbar<span class="token punctuation">.</span>postfix <span class="token operator">=</span> <span class="token punctuation">(</span>
+                                <span class="token string-interpolation"><span class="token string">f"est. speed input: </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>in_spd<span class="token punctuation">:</span><span class="token format-spec">.2f</span><span class="token punctuation">}</span></span><span class="token string"> toks/s, output: </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>out_spd<span class="token punctuation">:</span><span class="token format-spec">.2f</span><span class="token punctuation">}</span></span><span class="token string"> toks/s"</span></span>
+                            <span class="token punctuation">)</span>
+                        pbar<span class="token punctuation">.</span>update<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> use_tqdm<span class="token punctuation">:</span>
+            pbar<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># Sort the outputs by request ID.</span>
+        <span class="token comment"># This is necessary because some requests may be finished earlier than</span>
+        <span class="token comment"># its previous requests.</span>
+        <span class="token keyword">return</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>outputs<span class="token punctuation">,</span> key<span class="token operator">=</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">(</span>x<span class="token punctuation">.</span>request_id<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            整个推理engine中，最重要的是
+            <strong>
+             self.llm_engine.step()
+            </strong>
+            ，封装了所有的调度，推理和后处理代码。
+           </p>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">step</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>RequestOutput<span class="token punctuation">,</span> EmbeddingRequestOutput<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token comment"># 多GPU并行推理时走AsyncLLMEngine分支。如果进入当前LLMEngine,性能会下降，这里会抛出异常。</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>parallel_config<span class="token punctuation">.</span>pipeline_parallel_size <span class="token operator">&gt;</span> <span class="token number">1</span><span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> NotImplementedError<span class="token punctuation">(</span>
+                    <span class="token string">"Pipeline parallelism is only supported through AsyncLLMEngine "</span>
+                    <span class="token string">"as performance will be severely degraded otherwise."</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># 上述if判断表明，只有一个GPU可用。因此self.scheduler也只有一个元素，是当前GPU的调度</span>
+        <span class="token comment"># 该函数调用改变调度的内部状态(self.running、self.swapped 和 self.waiting)</span>
+        seq_group_metadata_list<span class="token punctuation">,</span> scheduler_outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>scheduler<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>schedule<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+		
+        <span class="token keyword">return</span> request_outputs
+</code></pre>
+           <p>
+            step中使用的调度代码如下：
+           </p>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">schedule</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> Tuple<span class="token punctuation">[</span>List<span class="token punctuation">[</span>SequenceGroupMetadata<span class="token punctuation">]</span><span class="token punctuation">,</span> SchedulerOutputs<span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token comment"># Schedule sequence groups.</span>
+        <span class="token comment"># This function call changes the internal states of the scheduler</span>
+        <span class="token comment"># such as self.running, self.swapped, and self.waiting.</span>
+        <span class="token comment"># 该函数调用改变调度的内部状态(self.running、self.swapped 和 self.waiting）</span>
+        scheduler_outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>_schedule<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+        <span class="token keyword">return</span> seq_group_metadata_list<span class="token punctuation">,</span> scheduler_outputs
+</code></pre>
+           <p>
+            调度系统是vllm代码的核心，接下来，我们花单独一篇文章，详细解读
+            <strong>
+             self._schedule()的内部逻辑
+            </strong>
+            。
+           </p>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>

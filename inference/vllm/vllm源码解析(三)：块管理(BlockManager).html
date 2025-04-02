@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/weixin_42479327/article/details/141672341" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      vllm源码解析(三)：块管理(BlockManager)_use-v2-block-manager-CSDN博客
+     </title>
+     <meta content="use-v2-block-manager" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"use-v2-block-manager"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读2.3k次，点赞30次，收藏22次。目前为止，我们提到了很多次物理块的概念，到底什么是块呢？首先来看下物理块block(在块管理器BlockSpaceManager中使用)self,) -&gt; None:# 该物理块在对应设备上的全局block索引号# 每个block槽位数量(默认16)# 在prefix caching场景下使用，其他场景值为-1# 该物理块的hash值是由多少个前置token计算而来的，非prefix caching场景值为0# 该物理块被引用次数。_use-v2-block-manager" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-af0ead44cd.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-whitemove/skin-whitemove-2af9149bdc.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            vllm源码解析(三)：块管理(BlockManager)
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/weixin_42479327" rel="noopener" target="_blank" title="弈秋001">
+              弈秋001
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUpTime2.png"/>
+             <span class="time">
+              已于 2024-09-05 21:50:48 修改
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量2.3k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                22
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            30
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"transformer","ab":"new","extra":"{\"searchword\":\"transformer\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"transformer","ab":"new","extra":"{\"searchword\":\"transformer\"}"}' href="https://so.csdn.net/so/search/s.do?q=transformer&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              transformer
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"nlp","ab":"new","extra":"{\"searchword\":\"nlp\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"nlp","ab":"new","extra":"{\"searchword\":\"nlp\"}"}' href="https://so.csdn.net/so/search/s.do?q=nlp&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              nlp
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' href="https://so.csdn.net/so/search/s.do?q=gpt-3&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              gpt-3
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+            </div>
+           </div>
+           <div class="up-time">
+            <span>
+             于 2024-09-05 21:50:22 首次发布
+            </span>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/weixin_42479327/article/details/141672341" target="_blank">
+               https://blog.csdn.net/weixin_42479327/article/details/141672341
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-light" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <h2>
+            <a id="__0">
+            </a>
+            六 块管理器
+           </h2>
+           <h3>
+            <a id="61__2">
+            </a>
+            6.1 块管理方法在调度系统中的应用
+           </h3>
+           <p>
+            在第二篇文章对调度系统的分析中，我们可以看到调度系统中普遍都使用了块管理方法：
+           </p>
+           <ul>
+            <li>
+             _schedule_prefills
+            </li>
+           </ul>
+           <pre><code class="prism language-python"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token comment"># 比较当前seq需要的物理块,gpu可用物理块之间的数量关系. 决定是否能给当前seq_group分配物理块</span>
+<span class="token comment"># can_allocate返回值可能有三种： NEVER：不分配；OK：可以分配；LATER：延迟分配</span>
+can_allocate <span class="token operator">=</span> self<span class="token punctuation">.</span>block_manager<span class="token punctuation">.</span>can_allocate<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+<span class="token comment"># 为当前seq_group分配物理块,并将该seq_group中每条seq的status从waiting改为running</span>
+self<span class="token punctuation">.</span>_allocate_and_set_running<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+</code></pre>
+           <ul>
+            <li>
+             _schedule_running
+            </li>
+           </ul>
+           <pre><code class="prism language-python"><span class="token comment"># 对于这个seq_group，检查对于其中的每一个seq，是否能至少分配一个物理块给它</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token keyword">while</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>_can_append_slots<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+<span class="token comment"># 为当前seq_group分配gpu 物理blocks. 这里只分配了逻辑blocks与物理blocks的映射关系</span>
+<span class="token comment"># blocks_to_copy:[旧物理块id, copy - on - write而来的新物理块id]</span>
+self<span class="token punctuation">.</span>_append_slots<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> blocks_to_copy<span class="token punctuation">)</span>
+</code></pre>
+           <ul>
+            <li>
+             _schedule_swapped
+            </li>
+           </ul>
+           <pre><code class="prism language-python"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token comment"># 根据需要的，与可用的物理blocks数量判断，是否可以把当前seq_group从swap队列转移到running队列</span>
+alloc_status <span class="token operator">=</span> self<span class="token punctuation">.</span>block_manager<span class="token punctuation">.</span>can_swap_in<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> self<span class="token punctuation">.</span>_get_num_lookahead_slots<span class="token punctuation">(</span>is_prefill<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token comment"># 再把CPU上的blocks转移到GPU block上</span>
+self<span class="token punctuation">.</span>_swap_in<span class="token punctuation">(</span>seq_group<span class="token punctuation">,</span> blocks_to_swap_in<span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre>
+           <p>
+            以上对物理块的操作由
+            <strong>
+             BlockSpaceManager(v1或v2)
+            </strong>
+            块管理器类完成，接下来我们看下这个类与调度系统的关系。
+           </p>
+           <p>
+            块管理器类是在调度类
+            <strong>
+             Scheduler
+            </strong>
+            中初始化的，Scheduler管理所有的推理请求，是个全局变量，因此块管理器也是一个
+            <br/>
+            全局变量，管控过程中所有seq_group的需求block与物理block的映射情况。
+           </p>
+           <p>
+            从下图可以看到它们之间从属关系：
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/ede3f66fdda94388a21bc98e38a12788.png"/>
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">Scheduler</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            scheduler_config<span class="token punctuation">:</span> SchedulerConfig<span class="token punctuation">,</span>
+            cache_config<span class="token punctuation">:</span> CacheConfig<span class="token punctuation">,</span>
+            lora_config<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>LoRAConfig<span class="token punctuation">]</span><span class="token punctuation">,</span>
+            pipeline_parallel_size<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        version <span class="token operator">=</span> <span class="token string">"v1"</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>scheduler_config<span class="token punctuation">.</span>use_v2_block_manager<span class="token punctuation">:</span>
+            version <span class="token operator">=</span> <span class="token string">"v2"</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>scheduler_config<span class="token punctuation">.</span>embedding_mode<span class="token punctuation">:</span>
+            version <span class="token operator">=</span> <span class="token string">"embedding"</span>
+
+        BlockSpaceManagerImpl <span class="token operator">=</span> BlockSpaceManager<span class="token punctuation">.</span>get_block_space_manager_class<span class="token punctuation">(</span>version<span class="token punctuation">)</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token comment"># Create the block space manager.</span>
+        self<span class="token punctuation">.</span>block_manager <span class="token operator">=</span> BlockSpaceManagerImpl<span class="token punctuation">(</span>
+                block_size<span class="token operator">=</span>self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>block_size<span class="token punctuation">,</span>
+                num_gpu_blocks<span class="token operator">=</span>num_gpu_blocks<span class="token punctuation">,</span>
+                num_cpu_blocks<span class="token operator">=</span>num_cpu_blocks<span class="token punctuation">,</span>
+                sliding_window<span class="token operator">=</span>self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>sliding_window<span class="token punctuation">,</span>
+                enable_caching<span class="token operator">=</span>self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>enable_prefix_caching<span class="token punctuation">)</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_can_append_slots</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token builtin">bool</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Determine whether or not we have enough space in the KV cache to
+        continue generation of the sequence group.
+        """</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token comment"># Appending slots only occurs in decoding.</span>
+        is_prefill <span class="token operator">=</span> <span class="token boolean">False</span>
+
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>block_manager<span class="token punctuation">.</span>can_append_slots<span class="token punctuation">(</span>
+                seq_group<span class="token operator">=</span>seq_group<span class="token punctuation">,</span>
+                num_lookahead_slots<span class="token operator">=</span>self<span class="token punctuation">.</span>_get_num_lookahead_slots<span class="token punctuation">(</span>is_prefill<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+</code></pre>
+           <h3>
+            <a id="62__92">
+            </a>
+            6.2 块管理器的定义
+           </h3>
+           <p>
+            目前为止，我们提到了很多次物理块的概念，到底什么是块呢？
+           </p>
+           <p>
+            首先来看下物理块block
+            <strong>
+             (在块管理器BlockSpaceManager中使用)
+            </strong>
+            长什么样：
+           </p>
+           <ul>
+            <li>
+             vllm/block.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">PhysicalTokenBlock</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Represents the state of a block in the KV cache."""</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span>
+        device<span class="token punctuation">:</span> Device<span class="token punctuation">,</span>
+        block_number<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+        block_size<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+        block_hash<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+        num_hashed_tokens<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>device <span class="token operator">=</span> device
+        <span class="token comment"># 该物理块在对应设备上的全局block索引号</span>
+        self<span class="token punctuation">.</span>block_number <span class="token operator">=</span> block_number
+        <span class="token comment"># 每个block槽位数量(默认16)</span>
+        self<span class="token punctuation">.</span>block_size <span class="token operator">=</span> block_size
+        <span class="token comment"># 在prefix caching场景下使用，其他场景值为-1</span>
+        self<span class="token punctuation">.</span>block_hash <span class="token operator">=</span> block_hash
+        <span class="token comment"># 该物理块的hash值是由多少个前置token计算而来的，非prefix caching场景值为0</span>
+        self<span class="token punctuation">.</span>num_hashed_tokens <span class="token operator">=</span> num_hashed_tokens
+        <span class="token comment"># 该物理块被引用次数</span>
+        self<span class="token punctuation">.</span>ref_count <span class="token operator">=</span> <span class="token number">0</span>
+        <span class="token comment"># 物理块最后一个被访问时间，非prefix caching场景值为-1</span>
+        self<span class="token punctuation">.</span>last_accessed <span class="token operator">=</span> DEFAULT_LAST_ACCESSED_TIME
+        <span class="token comment"># 该物理块是否被计算过，只在prefix caching场景下启用</span>
+        self<span class="token punctuation">.</span>computed <span class="token operator">=</span> <span class="token boolean">False</span>
+
+    <span class="token keyword">def</span> <span class="token function">__repr__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token builtin">str</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'PhysicalTokenBlock(device=</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>self<span class="token punctuation">.</span>device<span class="token punctuation">}</span></span><span class="token string">, '</span></span>
+                <span class="token string-interpolation"><span class="token string">f'block_number=</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>self<span class="token punctuation">.</span>block_number<span class="token punctuation">}</span></span><span class="token string">, '</span></span>
+                <span class="token string-interpolation"><span class="token string">f'num_hashed_tokens=</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>self<span class="token punctuation">.</span>num_hashed_tokens<span class="token punctuation">}</span></span><span class="token string">, '</span></span>
+                <span class="token string-interpolation"><span class="token string">f'ref_count=</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>self<span class="token punctuation">.</span>ref_count<span class="token punctuation">}</span></span><span class="token string">, '</span></span>
+                <span class="token string-interpolation"><span class="token string">f'last_accessed=</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>self<span class="token punctuation">.</span>last_accessed<span class="token punctuation">}</span></span><span class="token string">, '</span></span>
+                <span class="token string-interpolation"><span class="token string">f'computed=</span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>self<span class="token punctuation">.</span>computed<span class="token punctuation">}</span></span><span class="token string">)'</span></span><span class="token punctuation">)</span>
+
+
+<span class="token comment"># Mapping: logical block number -&gt; physical block.</span>
+BlockTable <span class="token operator">=</span> List<span class="token punctuation">[</span>PhysicalTokenBlock<span class="token punctuation">]</span>
+</code></pre>
+           <p>
+            从类定义可以看出，调度系统的物理块
+            <strong>
+             并不执行存储kv值的操作
+            </strong>
+            ，它的用途是
+            <strong>
+             记录物理block的状态
+            </strong>
+            ，
+            <br/>
+            <strong>
+             我们不生产kv-cache，只是kv-cache的搬运工~ (如swapp操作中，kv-cache从GPU向CPU转移)
+            </strong>
+           </p>
+           <p>
+            真实的物理块是gpu/cpu上的物理内存，真实存在，也实际存储着token的kv-cache，
+            <strong>
+             但调度系统和块管理器中使用的是这些真实物理块的编号、状态等信息
+            </strong>
+            。就像战时指挥部（Scheduler）会指挥军队（blocks）具体的行动细节，但指挥部却不会亲自上战场
+           </p>
+           <p>
+            如
+            <strong>
+             self.block_number
+            </strong>
+            记录了真实存储kv-cache的block的索引号。
+            <br/>
+            <strong>
+             BlockTable
+            </strong>
+            则记录着多个物理块编号的列表(
+            <strong>
+             记录着seq_group中每条seq的具体tokens存储在哪些物理块上
+            </strong>
+            )。
+           </p>
+           <p>
+            块管理器的作用是
+            <strong>
+             物理块结构，逻辑块-物理块映射，物理块新增与释放等操作
+            </strong>
+            ，vllm现有2个版本的块管理器，目前系统默认使用的是v1,接下来我们也以v1版来讲解
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">BlockSpaceManagerV1</span><span class="token punctuation">(</span>BlockSpaceManager<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Manages the mapping between logical and physical token blocks."""</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            block_size<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+            num_gpu_blocks<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+            num_cpu_blocks<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+            watermark<span class="token punctuation">:</span> <span class="token builtin">float</span> <span class="token operator">=</span> <span class="token number">0.01</span><span class="token punctuation">,</span>
+            sliding_window<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+            enable_caching<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>block_size <span class="token operator">=</span> block_size
+        self<span class="token punctuation">.</span>num_total_gpu_blocks <span class="token operator">=</span> num_gpu_blocks
+        self<span class="token punctuation">.</span>num_total_cpu_blocks <span class="token operator">=</span> num_cpu_blocks
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        self<span class="token punctuation">.</span>watermark <span class="token operator">=</span> watermark
+        <span class="token keyword">assert</span> watermark <span class="token operator">&gt;=</span> <span class="token number">0.0</span>
+
+        self<span class="token punctuation">.</span>enable_caching <span class="token operator">=</span> enable_caching
+        <span class="token comment"># 水位线，是一个数量阈值，设置它的目的是避免gpu上物理块全部使用完。</span>
+        self<span class="token punctuation">.</span>watermark_blocks <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>watermark <span class="token operator">*</span> num_gpu_blocks<span class="token punctuation">)</span>
+
+        <span class="token comment"># 根据是否做了prefix caching限制，来选择不同的allocator</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>enable_caching<span class="token punctuation">:</span>
+            logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string">"Automatic prefix caching is enabled."</span><span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">:</span> BlockAllocatorBase <span class="token operator">=</span> CachedBlockAllocator<span class="token punctuation">(</span>
+                    Device<span class="token punctuation">.</span>GPU<span class="token punctuation">,</span> block_size<span class="token punctuation">,</span> num_gpu_blocks<span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>cpu_allocator<span class="token punctuation">:</span> BlockAllocatorBase <span class="token operator">=</span> CachedBlockAllocator<span class="token punctuation">(</span>
+                    Device<span class="token punctuation">.</span>CPU<span class="token punctuation">,</span> block_size<span class="token punctuation">,</span> num_cpu_blocks<span class="token punctuation">)</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>gpu_allocator <span class="token operator">=</span> UncachedBlockAllocator<span class="token punctuation">(</span>
+                    Device<span class="token punctuation">.</span>GPU<span class="token punctuation">,</span> block_size<span class="token punctuation">,</span> num_gpu_blocks<span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>cpu_allocator <span class="token operator">=</span> UncachedBlockAllocator<span class="token punctuation">(</span>
+                    Device<span class="token punctuation">.</span>CPU<span class="token punctuation">,</span> block_size<span class="token punctuation">,</span> num_cpu_blocks<span class="token punctuation">)</span>
+         
+        <span class="token comment"># Mapping: seq_id -&gt; BlockTable.</span>
+        <span class="token comment"># 记录每个seq对应的BlockTable(这是一个包含物理块索引号的list)</span>
+        self<span class="token punctuation">.</span>block_tables<span class="token punctuation">:</span> Dict<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> BlockTable<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{<!-- --></span><span class="token punctuation">}</span>
+        
+        <span class="token comment"># Mapping: req_id -&gt; BlockTable. Note that each SequenceGroup has a unique equest ID</span>
+        <span class="token comment"># 功能同上，但cross_block_tables记录的是encoder-decode类型的模型，暂时混略</span>
+        self<span class="token punctuation">.</span>cross_block_tables<span class="token punctuation">:</span> Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> BlockTable<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{<!-- --></span><span class="token punctuation">}</span>
+</code></pre>
+           <p>
+            从以上初始化代码可以看出：
+            <br/>
+            BlockManager这个class下维护着两个重要属性：
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               BlockAllocator
+              </strong>
+              ：
+              <strong>
+               物理块分配者，负责实际为seq做物理块的分配、释放、拷贝等操作
+              </strong>
+              。我们推理时使用gpu_allocator，和 cpu_allocator用于gpu资源不足时临时存储kv-cache，
+              <strong>
+               对应的swapped队列
+              </strong>
+              。
+             </p>
+             <p>
+              其中，BlockAllocator又分成两种类型：
+              <br/>
+              <strong>
+               CachedBlockAllocator
+              </strong>
+              ：按照prefix caching的思想（
+              <strong>
+               prompt共享
+              </strong>
+              ）来分配和管理物理块。带有这些相同prefix信息（
+              <strong>
+               如"提示词 你是一个助手"
+              </strong>
+              ）的prompt完全可以共享用于存放prefix的物理块，这样既节省显存，也不用再对prefix做推理。
+              <br/>
+              <strong>
+               UncachedBlockAllocator
+              </strong>
+              ：正常分配和管理物理块，没有额外实现prefix caching的功能。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               block_tables
+              </strong>
+              ：负责维护每个seq下的物理块列表，本质上它是一个字典，因为调度器是全局的，所以它下面的的BlockManager自然也是全局的。因为seq_id也是全局唯一，所以这个字典维护着调度系统中所有待推理的seq（即使它们在不同的seq_group中）的物理块。
+             </p>
+            </li>
+           </ul>
+           <p>
+            经过层层转包后，我们发现
+            <strong>
+             最终干活的是gpu_allocator
+            </strong>
+            。让我们接着看下allocator长什么样，下面代码比较简单，大家看注释就能明白了
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">UncachedBlockAllocator</span><span class="token punctuation">(</span>BlockAllocatorBase<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            device<span class="token punctuation">:</span> Device<span class="token punctuation">,</span>
+            block_size<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+            num_blocks<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>device <span class="token operator">=</span> device
+        self<span class="token punctuation">.</span>block_size <span class="token operator">=</span> block_size
+        self<span class="token punctuation">.</span>num_blocks <span class="token operator">=</span> num_blocks
+
+        <span class="token comment"># Initialize the free blocks.</span>
+        self<span class="token punctuation">.</span>free_blocks<span class="token punctuation">:</span> BlockTable <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 假设系统GPU可用显存能容纳256个block，那就在这里直接</span>
+        <span class="token comment"># 初始化256个block，用时从free_blocks中取就好。</span>
+        <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>num_blocks<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            block <span class="token operator">=</span> PhysicalTokenBlock<span class="token punctuation">(</span>device<span class="token operator">=</span>device<span class="token punctuation">,</span>
+                                       block_number<span class="token operator">=</span>i<span class="token punctuation">,</span>
+                                       block_size<span class="token operator">=</span>block_size<span class="token punctuation">,</span>
+                                       block_hash<span class="token operator">=</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span>
+                                       num_hashed_tokens<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>free_blocks<span class="token punctuation">.</span>append<span class="token punctuation">(</span>block<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">allocate</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span>
+                 block_hash<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+                 num_hashed_tokens<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> PhysicalTokenBlock<span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""分配block: 从自由态block列表中取出一个block，并将引用计数设为1"""</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>free_blocks<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"Out of memory! No free blocks are available."</span><span class="token punctuation">)</span>
+        block <span class="token operator">=</span> self<span class="token punctuation">.</span>free_blocks<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        block<span class="token punctuation">.</span>ref_count <span class="token operator">=</span> <span class="token number">1</span>
+        <span class="token keyword">return</span> block
+
+    <span class="token keyword">def</span> <span class="token function">free</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> block<span class="token punctuation">:</span> PhysicalTokenBlock<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""释放block，引用计数置为0"""</span>
+        <span class="token keyword">if</span> block<span class="token punctuation">.</span>ref_count <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Double free! </span><span class="token interpolation"><span class="token punctuation">{<!-- --></span>block<span class="token punctuation">}</span></span><span class="token string"> is already freed."</span></span><span class="token punctuation">)</span>
+        block<span class="token punctuation">.</span>ref_count <span class="token operator">-=</span> <span class="token number">1</span>
+        <span class="token keyword">if</span> block<span class="token punctuation">.</span>ref_count <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>free_blocks<span class="token punctuation">.</span>append<span class="token punctuation">(</span>block<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">get_num_free_blocks</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token builtin">int</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""获得当前gpu上可用block数量"""</span>
+        <span class="token keyword">return</span> <span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>free_blocks<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">get_num_total_blocks</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token builtin">int</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""获得当前gpu所有block总数"""</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>num_blocks
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre>
+           <h3>
+            <a id="63__259">
+            </a>
+            6.3 块管理器方法解析
+           </h3>
+           <p>
+            调度系统中所有与块相关的方法都来自BlockSpaceManagerV1类，下面我们解析下这个类的一些重要方法
+           </p>
+           <ul>
+            <li>
+             vllm_module/core/block_manager_v1.py：class BlockSpaceManagerV1
+            </li>
+           </ul>
+           <p>
+            <strong>
+             6.31 can_allocate
+            </strong>
+           </p>
+           <ul>
+            <li>
+             是否可为seq_group分配足够物理块用于prefill（
+             <strong>
+              _schedule_prefills中有使用
+             </strong>
+             ）
+             <br/>
+             以下代码中，
+             <strong>
+              _num_required_blocks
+             </strong>
+             是当前seq_group需要的block数量，
+             <font color="#dd0000">
+              <strong>
+               完全替代了logical table的作用
+              </strong>
+             </font>
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">can_allocate</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> AllocStatus<span class="token punctuation">:</span>
+        <span class="token comment"># FIXME(woosuk): Here we assume that all sequences in the group share</span>
+        <span class="token comment"># the same prompt. This may not be true for preempted sequences.</span>
+        <span class="token comment"># 只对encoder-decode模型有效，忽略</span>
+        check_no_caching_or_swa_for_blockmgr_encdec<span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">)</span>
+
+        <span class="token comment"># 计算当前seq序列需要的物理block数量</span>
+        <span class="token comment"># 这是seq的一个属性，对于waiting状态的seq，n_blocks=len(prompt)/16, 向上取整</span>
+        self_num_required_blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_seq_num_required_blocks<span class="token punctuation">(</span>
+                seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>WAITING<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token comment"># 又是encoder-decode相关，忽略</span>
+        cross_num_required_blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_seq_num_required_blocks<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>get_encoder_seq<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        num_required_blocks <span class="token operator">=</span> self_num_required_blocks <span class="token operator">+</span> cross_num_required_blocks
+		
+		滑窗，忽略
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>block_sliding_window <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            num_required_blocks <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>num_required_blocks<span class="token punctuation">,</span> self<span class="token punctuation">.</span>block_sliding_window<span class="token punctuation">)</span>
+        <span class="token comment"># 当前gpu空闲的blocks数量</span>
+        num_free_gpu_blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>get_num_free_blocks<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># Use watermark to avoid frequent cache eviction.</span>
+        <span class="token comment"># 如果设备中所有的物理块数量 - 该seq实际需要的物理块数量 &lt; 水位线block数量，则不分配</span>
+        <span class="token comment"># 说明当前seq太长了，标记为NEVER，以后也不处理这个seq_group了</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>num_total_gpu_blocks <span class="token operator">-</span> num_required_blocks <span class="token operator">&lt;</span> self<span class="token punctuation">.</span>watermark_blocks<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> AllocStatus<span class="token punctuation">.</span>NEVER
+        <span class="token comment"># 如果设备中可用的物理块数量 - 该seq实际需要的block数量 &gt;= 水位线block数量，则分配</span>
+        <span class="token keyword">if</span> num_free_gpu_blocks <span class="token operator">-</span> num_required_blocks <span class="token operator">&gt;=</span> self<span class="token punctuation">.</span>watermark_blocks<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> AllocStatus<span class="token punctuation">.</span>OK
+        <span class="token comment"># 否则，现在不能分配(暂时没足够的blocks)，但可以延迟分配</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token keyword">return</span> AllocStatus<span class="token punctuation">.</span>LATER
+</code></pre>
+           <p>
+            <strong>
+             6.32 allocate
+            </strong>
+           </p>
+           <ul>
+            <li>
+             为当前seq_group分配物理块用于prefill（
+             <strong>
+              _schedule_prefills中有使用
+             </strong>
+             ）
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">allocate</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        is_encoder_decoder <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>is_encoder_decoder<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># 只对encoder-decode模型有效，忽略</span>
+        check_no_caching_or_swa_for_blockmgr_encdec<span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">)</span>
+
+        <span class="token comment"># Allocate decoder sequences</span>
+        <span class="token comment">#</span>
+        <span class="token comment"># NOTE: Here we assume that all sequences in the group have the same</span>
+        <span class="token comment"># decoder prompt.</span>
+        <span class="token comment"># 对于WAITING装的seq_group，seq只有1条，就是prompt</span>
+        seq <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>WAITING<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+        <span class="token comment"># block_table:list,存储的是当前seq用到的物理块的索引号</span>
+        block_table<span class="token punctuation">:</span> BlockTable <span class="token operator">=</span> self<span class="token punctuation">.</span>_allocate_sequence<span class="token punctuation">(</span>seq<span class="token punctuation">,</span>
+                                                          seq_group<span class="token punctuation">.</span>num_seqs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                                          is_encoder_decoder<span class="token punctuation">)</span>
+
+        <span class="token comment"># Assign the self-attention block tables for each sequence.</span>
+        <span class="token comment"># 记录每一个seq序列使用的block_table，block_tables是一个全局变量，记录这所有</span>
+        <span class="token comment"># seq_group的seq，根据add_request()中代码可知，不同seq_group的seq.id也不会重复，没有相互覆盖的风险</span>
+        <span class="token keyword">for</span> seq <span class="token keyword">in</span> seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>WAITING<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>block_tables<span class="token punctuation">[</span>seq<span class="token punctuation">.</span>seq_id<span class="token punctuation">]</span> <span class="token operator">=</span> block_table<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># Allocate encoder sequence</span>
+        <span class="token comment"># 忽略</span>
+        <span class="token keyword">if</span> is_encoder_decoder<span class="token punctuation">:</span>
+            <span class="token comment"># A SequenceGroup has only a single encoder sequence (at most),</span>
+            <span class="token comment"># thus allocate with a ref count of 1</span>
+            block_table <span class="token operator">=</span> self<span class="token punctuation">.</span>_allocate_sequence<span class="token punctuation">(</span>seq_group<span class="token punctuation">.</span>get_encoder_seq<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                                  <span class="token number">1</span><span class="token punctuation">,</span> is_encoder_decoder<span class="token punctuation">)</span>
+            <span class="token comment"># Assign the cross-attention block table for the SequenceGroup.</span>
+            self<span class="token punctuation">.</span>cross_block_tables<span class="token punctuation">[</span>seq_group<span class="token punctuation">.</span>request_id<span class="token punctuation">]</span> <span class="token operator">=</span> block_table
+</code></pre>
+           <p>
+            <strong>
+             6.33 _allocate_sequence
+            </strong>
+           </p>
+           <ul>
+            <li>
+             allocate中分配物理的方法是:
+             <strong>
+              _allocate_sequence
+             </strong>
+             ，从以下代码可以看出，
+             <font color="#dd0000">
+              <strong>
+               vllm删除了logical block，取而代之的关系在这里呈现
+              </strong>
+             </font>
+             <br/>
+             。从空闲的物理blocks中取出 num_prompt_blocks 个block，映射给当前seq_group中的seq。
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_allocate_sequence</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> \
+                           seq<span class="token punctuation">:</span> Sequence<span class="token punctuation">,</span> \
+                           ref_count<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span> \
+                           is_encoder_decoder<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">True</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> BlockTable<span class="token punctuation">:</span>
+        <span class="token comment"># Allocate new physical token blocks that will store the prompt tokens.</span>
+        <span class="token comment"># 当前seq需要的物理块数量</span>
+        num_prompt_blocks <span class="token operator">=</span> seq<span class="token punctuation">.</span>n_blocks
+
+        block_table<span class="token punctuation">:</span> BlockTable <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token keyword">for</span> logical_idx <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>num_prompt_blocks<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token comment"># 滑窗，忽略</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>self<span class="token punctuation">.</span>block_sliding_window <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span>
+                    <span class="token keyword">and</span> logical_idx <span class="token operator">&gt;=</span> self<span class="token punctuation">.</span>block_sliding_window<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                block <span class="token operator">=</span> block_table<span class="token punctuation">[</span>logical_idx <span class="token operator">%</span> self<span class="token punctuation">.</span>block_sliding_window<span class="token punctuation">]</span>
+                <span class="token comment"># Set the reference counts of the token blocks.</span>
+                block<span class="token punctuation">.</span>ref_count <span class="token operator">=</span> ref_count
+            <span class="token keyword">elif</span> <span class="token keyword">not</span> is_encoder_decoder <span class="token keyword">and</span> self<span class="token punctuation">.</span>enable_caching<span class="token punctuation">:</span>
+                block <span class="token operator">=</span> self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>allocate<span class="token punctuation">(</span>
+                        seq<span class="token punctuation">.</span>hash_of_block<span class="token punctuation">(</span>logical_idx<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        seq<span class="token punctuation">.</span>num_hashed_tokens_of_block<span class="token punctuation">(</span>logical_idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token comment"># 默认情况下走下面的分支</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+                block <span class="token operator">=</span> self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>allocate<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token comment"># Set the reference counts of the token blocks.</span>
+                <span class="token comment"># 由于seq_group下的所有seq共享一个prompt，所以有ref_count = num_seqs</span>
+                <span class="token comment"># 表示这些seqs的逻辑块都引用它了</span>
+                block<span class="token punctuation">.</span>ref_count <span class="token operator">=</span> ref_count
+            block_table<span class="token punctuation">.</span>append<span class="token punctuation">(</span>block<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> block_table
+</code></pre>
+           <p>
+            <strong>
+             6.34 can_append_slots
+            </strong>
+           </p>
+           <ul>
+            <li>
+             是否可以为推理中的seq_group分配空间（
+             <strong>
+              在_schedule_running有使用
+             </strong>
+             ）
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">can_append_slots</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span>
+                         seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">,</span>
+                         num_lookahead_slots<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token builtin">bool</span><span class="token punctuation">:</span>
+        <span class="token keyword">assert</span> <span class="token punctuation">(</span>num_lookahead_slots <span class="token operator">==</span> <span class="token number">0</span>
+                <span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"lookahead allocation not supported in BlockSpaceManagerV1"</span>
+
+        <span class="token comment"># Simple heuristic: If there is at least one free block</span>
+        <span class="token comment"># for each sequence, we can append.</span>
+        num_free_gpu_blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>get_num_free_blocks<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        num_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>num_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>RUNNING<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> num_seqs <span class="token operator">&lt;=</span> num_free_gpu_blocks
+</code></pre>
+           <p>
+            细心的你一定发现了，
+            <font color="#dd0000">
+             <strong>
+              在_schedule_prefills和_schedule_running两个调度方法各有一个判断是否可分配的空间的方法
+             </strong>
+            </font>
+            <br/>
+            ，can_allocate和 can_append_slots，
+            <strong>
+             它们有什么区别呢
+            </strong>
+            ？
+           </p>
+           <p>
+            我们来分析下这两个方法区别：
+           </p>
+           <ul>
+            <li>
+             对处于
+             <strong>
+              waiting
+             </strong>
+             状态的seq_group，首先要给他分配block，做prefill，即prompt的token产生的kv-cache存放在block中。此时
+             <strong>
+              占用block数量根据prompt长度而定
+             </strong>
+             。假设prompt长度为20，block_size为16，则需要2个block。
+            </li>
+            <li>
+             对处于
+             <strong>
+              running
+             </strong>
+             状态的seq_group，处于解码状态，每个seq每次推理会产生
+             <strong>
+              1个tokens
+             </strong>
+             ，有num_seqs个seq则会产生
+             <strong>
+              num_seqs个token
+             </strong>
+             ，最好的情况是：每个seq对应的last block都没满，不需要新增block就能完成新kv-cache的存储，
+             <strong>
+              此时需要的blocks为0
+             </strong>
+             ， 最坏的情况是：
+             <br/>
+             每个seq last block都满了，再进来的token只能开辟新的block，
+             <strong>
+              此时需要的blocks数量为num_seqs
+             </strong>
+             ，所有当可用blocks数量多于或等于num_seqs，当前seq_group就能继续做推理。
+            </li>
+           </ul>
+           <p>
+            <strong>
+             6.35 append_slots
+            </strong>
+           </p>
+           <ul>
+            <li>
+             为推理进行中的seq分配填充kv-cache的槽位（
+             <strong>
+              _schedule_running和_schedule_swapped都有用到
+             </strong>
+             ）
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">append_slots</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+            seq<span class="token punctuation">:</span> Sequence<span class="token punctuation">,</span>
+            num_lookahead_slots<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Allocate a physical slot for a new token."""</span>
+        n_blocks <span class="token operator">=</span> seq<span class="token punctuation">.</span>n_blocks
+        <span class="token comment"># 读取这个seq的物理块，List[PhysicalTokenBlock]</span>
+        block_table <span class="token operator">=</span> self<span class="token punctuation">.</span>block_tables<span class="token punctuation">[</span>seq<span class="token punctuation">.</span>seq_id<span class="token punctuation">]</span>
+        <span class="token comment"># If we need to allocate a new physical block</span>
+        <span class="token comment"># 如果实际物理块数量 &lt; seq需要的物理块数量(说明此时需要分配新的物理块了),为什么会出现这种情况?</span>
+        <span class="token comment"># 因为上1个推理阶段完毕后，seq的需求的块数量更新了，但物理块数量还没更新</span>
+        <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>block_table<span class="token punctuation">)</span> <span class="token operator">&lt;</span> n_blocks<span class="token punctuation">:</span>
+            <span class="token comment"># Currently this code only supports adding one physical block</span>
+            <span class="token comment"># 需要声明物理块只允许比需求的块少1块</span>
+            <span class="token keyword">assert</span> <span class="token builtin">len</span><span class="token punctuation">(</span>block_table<span class="token punctuation">)</span> <span class="token operator">==</span> n_blocks <span class="token operator">-</span> <span class="token number">1</span>
+            <span class="token comment"># 如果使用滑动窗口,忽略</span>
+            <span class="token keyword">if</span> self<span class="token punctuation">.</span>block_sliding_window <span class="token keyword">and</span> <span class="token builtin">len</span><span class="token punctuation">(</span>block_table<span class="token punctuation">)</span> <span class="token operator">&gt;=</span> self<span class="token punctuation">.</span>block_sliding_window<span class="token punctuation">:</span>
+                <span class="token comment"># reuse a block</span>
+                block_table<span class="token punctuation">.</span>append<span class="token punctuation">(</span>block_table<span class="token punctuation">[</span><span class="token builtin">len</span><span class="token punctuation">(</span>block_table<span class="token punctuation">)</span> <span class="token operator">%</span> self<span class="token punctuation">.</span>block_sliding_window<span class="token punctuation">]</span><span class="token punctuation">)</span>
+            <span class="token comment"># 其余情况，直接分配一个新的物理块给当前序列</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+                <span class="token comment"># The sequence hash a new logical block.</span>
+                <span class="token comment"># Allocate a new physical block.</span>
+                new_block <span class="token operator">=</span> self<span class="token punctuation">.</span>_allocate_last_physical_block<span class="token punctuation">(</span>seq<span class="token punctuation">)</span>
+                block_table<span class="token punctuation">.</span>append<span class="token punctuation">(</span>new_block<span class="token punctuation">)</span>
+                <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+        <span class="token comment"># We want to append the token to the last physical block.</span>
+        <span class="token comment"># 取出最后一个物理块</span>
+        last_block <span class="token operator">=</span> block_table<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+        <span class="token comment"># 断言该块必须是gpu物理块</span>
+        <span class="token keyword">assert</span> last_block<span class="token punctuation">.</span>device <span class="token operator">==</span> Device<span class="token punctuation">.</span>GPU
+
+        <span class="token comment"># 如果最后一个物理块的引用数量为1, 说明只有当前这个seq在用它</span>
+        <span class="token keyword">if</span> last_block<span class="token punctuation">.</span>ref_count <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">:</span>
+            <span class="token comment"># Not shared with other sequences. Appendable.</span>
+            <span class="token comment"># 是在做prefix caching，暂时忽略</span>
+            <span class="token keyword">if</span> self<span class="token punctuation">.</span>enable_caching<span class="token punctuation">:</span>
+                <span class="token comment"># If the last block is now complete, we may reuse an old block</span>
+                <span class="token comment"># to save memory.</span>
+                maybe_new_block <span class="token operator">=</span> self<span class="token punctuation">.</span>_maybe_promote_last_block<span class="token punctuation">(</span>seq<span class="token punctuation">,</span> last_block<span class="token punctuation">)</span>
+                block_table<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> maybe_new_block
+            <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 如果最后一个物理块的引用数量为 &gt; 1, 说明有别的seq在用它，不允许这样情况发生</span>
+        <span class="token comment"># 因为两个seq生成的内容可能不同，同时向一个位置添加kv-cache会出现相互覆盖的情况</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token comment"># The last block is shared with other sequences.</span>
+            <span class="token comment"># Copy on Write: Allocate a new block and copy the tokens.</span>
+            <span class="token comment"># 触发copy-on-write机制，分配一个新的物理块</span>
+            new_block <span class="token operator">=</span> self<span class="token punctuation">.</span>_allocate_last_physical_block<span class="token punctuation">(</span>seq<span class="token punctuation">)</span>
+            <span class="token comment"># 用新分配的block替换之前分配的那个</span>
+            block_table<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> new_block
+            <span class="token comment"># 把之前分配的block释放掉, 也即该物理块ref_count -= 1，</span>
+            <span class="token comment"># 如果-=1后ref_count=0，说明该物理块变为自由状态；但当前语境下不可能为0，因为</span>
+            <span class="token comment"># 正是因为last_block.ref_count&gt;1才会走到这里，此时last_block.ref_count最小为1</span>
+            self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>free<span class="token punctuation">(</span>last_block<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">(</span>last_block<span class="token punctuation">.</span>block_number<span class="token punctuation">,</span> new_block<span class="token punctuation">.</span>block_number<span class="token punctuation">)</span><span class="token punctuation">]</span>
+</code></pre>
+           <p>
+            <strong>
+             6.36 swap_out
+            </strong>
+           </p>
+           <ul>
+            <li>
+             将gpu block转移到CPU上，释放gpu block，保证推理正常进行（
+             <strong>
+              在_schedule_running中使用
+             </strong>
+             ）
+             <br/>
+             在调度系统中对swap_out有多层调用，抽丝剥茧后发现实际工作的还是swap_out这个方法，这些调用代码不难，在_schedule_running中，有兴趣可以自己去看下，代码太多，这里不展示了。
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">swap_out</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        request_id <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>request_id
+
+        <span class="token comment"># GPU block -&gt; CPU block.</span>
+        <span class="token comment"># dict is efficient in lookup `if gpu_block in mapping`</span>
+        mapping<span class="token punctuation">:</span> Dict<span class="token punctuation">[</span>PhysicalTokenBlock<span class="token punctuation">,</span> PhysicalTokenBlock<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{<!-- --></span><span class="token punctuation">}</span>
+        <span class="token comment"># 遍历当前seq_group中每条seq，gpu-&gt;cpu</span>
+        <span class="token keyword">for</span> seq <span class="token keyword">in</span> seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>RUNNING<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>block_tables<span class="token punctuation">[</span>seq<span class="token punctuation">.</span>seq_id<span class="token punctuation">]</span> <span class="token operator">=</span> \
+                self<span class="token punctuation">.</span>_swap_block_table<span class="token punctuation">(</span>self<span class="token punctuation">.</span>block_tables<span class="token punctuation">[</span>seq<span class="token punctuation">.</span>seq_id<span class="token punctuation">]</span><span class="token punctuation">,</span>
+                                       self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">,</span>
+                                       self<span class="token punctuation">.</span>cpu_allocator<span class="token punctuation">,</span>
+                                       mapping<span class="token punctuation">)</span>
+        <span class="token comment"># 忽略</span>
+        <span class="token keyword">if</span> seq_group<span class="token punctuation">.</span>is_encoder_decoder<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>cross_block_tables<span class="token punctuation">[</span>request_id<span class="token punctuation">]</span> <span class="token operator">=</span> \
+                self<span class="token punctuation">.</span>_swap_block_table<span class="token punctuation">(</span>self<span class="token punctuation">.</span>cross_block_tables<span class="token punctuation">[</span>request_id<span class="token punctuation">]</span><span class="token punctuation">,</span>
+                                       self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">,</span>
+                                       self<span class="token punctuation">.</span>cpu_allocator<span class="token punctuation">,</span>
+                                       mapping<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">(</span>cpu_block<span class="token punctuation">.</span>block_number<span class="token punctuation">,</span> gpu_block<span class="token punctuation">.</span>block_number<span class="token punctuation">)</span>
+                <span class="token keyword">for</span> cpu_block<span class="token punctuation">,</span> gpu_block <span class="token keyword">in</span> mapping<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+</code></pre>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_swap_block_table</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span> block_table<span class="token punctuation">:</span> BlockTable<span class="token punctuation">,</span> src_allocator<span class="token punctuation">:</span> BlockAllocatorBase<span class="token punctuation">,</span>
+            dest_allocator<span class="token punctuation">:</span> BlockAllocatorBase<span class="token punctuation">,</span>
+            mapping<span class="token punctuation">:</span> Dict<span class="token punctuation">[</span>PhysicalTokenBlock<span class="token punctuation">,</span>
+            PhysicalTokenBlock<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> BlockTable<span class="token punctuation">:</span>
+        new_block_table <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+        <span class="token keyword">for</span> from_block <span class="token keyword">in</span> block_table<span class="token punctuation">:</span>
+            <span class="token comment"># mapping 为空，走不到if</span>
+            <span class="token keyword">if</span> from_block <span class="token keyword">in</span> mapping<span class="token punctuation">:</span>
+                to_block <span class="token operator">=</span> mapping<span class="token punctuation">[</span>from_block<span class="token punctuation">]</span>
+                to_block<span class="token punctuation">.</span>ref_count <span class="token operator">+=</span> <span class="token number">1</span>
+            <span class="token comment"># 会走else分支</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+                <span class="token comment"># 在CPU上分配物理块</span>
+                to_block <span class="token operator">=</span> dest_allocator<span class="token punctuation">.</span>allocate<span class="token punctuation">(</span>
+                        from_block<span class="token punctuation">.</span>block_hash<span class="token punctuation">,</span> from_block<span class="token punctuation">.</span>num_hashed_tokens<span class="token punctuation">)</span>
+                <span class="token comment"># 记录GPU与CPU上物理块的索引号映射，便于以后cpu-&gt;gpu找回。</span>
+                mapping<span class="token punctuation">[</span>from_block<span class="token punctuation">]</span> <span class="token operator">=</span> to_block
+            <span class="token comment"># 记录CPU物理块的索引号，CPU物理块与CPU物理块一一对应</span>
+            new_block_table<span class="token punctuation">.</span>append<span class="token punctuation">(</span>to_block<span class="token punctuation">)</span>
+            <span class="token comment"># Free the source block swapped in to destination.</span>
+            <span class="token comment"># 释放GPU物理块</span>
+            src_allocator<span class="token punctuation">.</span>free<span class="token punctuation">(</span>from_block<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> new_block_table
+</code></pre>
+           <p>
+            经过swap_out操作后，self.block_tables中存储的是
+            <strong>
+             被操作seq_id与cpu block的映射关系。
+            </strong>
+            <br/>
+            mapping存储的是CPU block与gpu block之间一一对应的索引号，便于以后cpu-&gt;gpu转移时找回。
+           </p>
+           <p>
+            <strong>
+             6.37 swap_in
+            </strong>
+           </p>
+           <ul>
+            <li>
+             如果有足够block，会把swapd中的seq_group移回running（
+             <strong>
+              在_schedule_swapped中使用
+             </strong>
+             ）
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">can_swap_in</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span>
+                    seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">,</span>
+                    num_lookahead_slots<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> AllocStatus<span class="token punctuation">:</span>
+        <span class="token keyword">assert</span> num_lookahead_slots <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token string">"BlockSpaceManagerV1 does not support lookahead allocation"</span>
+        <span class="token comment"># 当前seq_group正在使用的不重复的物理块</span>
+        blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>_get_physical_blocks<span class="token punctuation">(</span>seq_group<span class="token punctuation">)</span>
+        <span class="token comment"># 当前处于SWAPPED状态的seq数量</span>
+        num_swapped_seqs <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>num_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>SWAPPED<span class="token punctuation">)</span>
+        <span class="token comment"># 忽略</span>
+        <span class="token keyword">if</span> seq_group<span class="token punctuation">.</span>is_encoder_decoder<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            num_swapped_seqs <span class="token operator">+=</span> <span class="token number">1</span>
+        <span class="token comment"># 当前GPU可用的物理块数量</span>
+        num_free_blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>get_num_free_blocks<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># NOTE: Conservatively, we assume that every sequence will allocate</span>
+        <span class="token comment"># at least one free block right after the swap-in.</span>
+        <span class="token comment"># NOTE: This should match the logic in can_append_slot().</span>
+
+        <span class="token comment"># len(blocks)是移动回GPU时应该使用的物理块数量，prompt+已完成解码的output 的kv-cache 需要使用这些block</span>
+        <span class="token comment"># num_swapped_seqs是预备生成的token所使用的block，前面我们分析过，解码阶段，一个seq可能使用的</span>
+        <span class="token comment"># block最小为0(最后一个block槽位没满，还能继续添加)，最大为1(最后的block槽位满，要新增block才能完成推理)</span>
+        <span class="token comment"># 随意二者加起来的block的数量才是能绝对满足该seq_group推理的block数量</span>
+        num_required_blocks <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>blocks<span class="token punctuation">)</span> <span class="token operator">+</span> num_swapped_seqs
+        <span class="token comment"># 如果GPU总共的blocks(不是可用block，是所有的block)都小于num_required_blocks，</span>
+        <span class="token comment"># 这条seq_group没法推理(GPU装不下这条数据)，</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">.</span>get_num_total_blocks<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> num_required_blocks<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> AllocStatus<span class="token punctuation">.</span>NEVER
+        <span class="token comment"># 在水位线以上，合格</span>
+        <span class="token keyword">elif</span> num_free_blocks <span class="token operator">-</span> num_required_blocks <span class="token operator">&gt;=</span> self<span class="token punctuation">.</span>watermark_blocks<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> AllocStatus<span class="token punctuation">.</span>OK
+        <span class="token comment"># 小于水位线，GPU block数量暂时不够，稍后在处理这条数据</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token keyword">return</span> AllocStatus<span class="token punctuation">.</span>LATER
+</code></pre>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">swap_in</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> seq_group<span class="token punctuation">:</span> SequenceGroup<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+
+        request_id <span class="token operator">=</span> seq_group<span class="token punctuation">.</span>request_id
+
+        <span class="token comment"># CPU block -&gt; GPU block.</span>
+        <span class="token comment"># dict is efficient in lookup `if cpu_block in mapping`</span>
+        mapping<span class="token punctuation">:</span> Dict<span class="token punctuation">[</span>PhysicalTokenBlock<span class="token punctuation">,</span> PhysicalTokenBlock<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{<!-- --></span><span class="token punctuation">}</span>
+        <span class="token keyword">for</span> seq <span class="token keyword">in</span> seq_group<span class="token punctuation">.</span>get_seqs<span class="token punctuation">(</span>status<span class="token operator">=</span>SequenceStatus<span class="token punctuation">.</span>SWAPPED<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>block_tables<span class="token punctuation">[</span>seq<span class="token punctuation">.</span>seq_id<span class="token punctuation">]</span> <span class="token operator">=</span> \
+                self<span class="token punctuation">.</span>_swap_block_table<span class="token punctuation">(</span>self<span class="token punctuation">.</span>block_tables<span class="token punctuation">[</span>seq<span class="token punctuation">.</span>seq_id<span class="token punctuation">]</span><span class="token punctuation">,</span>   <span class="token comment"># 取出该seq用到的GPU block</span>
+                                       self<span class="token punctuation">.</span>cpu_allocator<span class="token punctuation">,</span>  <span class="token comment"># CPU物理块分配器</span>
+                                       self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">,</span>  <span class="token comment"># GPU物理块分配器</span>
+                                       mapping<span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> seq_group<span class="token punctuation">.</span>is_encoder_decoder<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>cross_block_tables<span class="token punctuation">[</span>request_id<span class="token punctuation">]</span> <span class="token operator">=</span> \
+                self<span class="token punctuation">.</span>_swap_block_table<span class="token punctuation">(</span>self<span class="token punctuation">.</span>cross_block_tables<span class="token punctuation">[</span>request_id<span class="token punctuation">]</span><span class="token punctuation">,</span>
+                                       self<span class="token punctuation">.</span>cpu_allocator<span class="token punctuation">,</span>
+                                       self<span class="token punctuation">.</span>gpu_allocator<span class="token punctuation">,</span>
+                                       mapping<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">(</span>cpu_block<span class="token punctuation">.</span>block_number<span class="token punctuation">,</span> gpu_block<span class="token punctuation">.</span>block_number<span class="token punctuation">)</span>
+                <span class="token keyword">for</span> cpu_block<span class="token punctuation">,</span> gpu_block <span class="token keyword">in</span> mapping<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+</code></pre>
+           <p>
+            可以看到swap_in的代码与前面swap_out很像，只是self._swap_block_table方法，CPU，GPU块分类器次序变了。
+            <br/>
+            感觉swap_in和swap_out这两个方法会在后期版本迭代时合并在一起。
+           </p>
+           <p>
+            到此，调度系统中涉及的block操作已经全部讲完，代码量挺多，但不是很复杂，总体来说，就是
+            <strong>
+             比较物理块数量来决定seq_group推理状态。
+            </strong>
+            注意，
+            <font color="#dd0000">
+             <strong>
+              只是调度（seq.id与block索引号映射， gpu与CPU block之间的kv-cache转移等），并不是实际填充kv-cache,
+             </strong>
+            </font>
+            填充操作在推理过程由另外的模块完成(在attention的计算中完成， 在后续篇幅讲解)。
+           </p>
+           <p>
+            遗留工作：
+            <br/>
+            在BlockSpaceManagerV1类初始化时，我们讲到BlockAllocator有两种，目前仅讲了一种，另一种更复杂的block分配方式
+            <strong>
+             CachedBlockAllocator
+            </strong>
+            并没有提到。要启用这个模式，需要在vllm
+            <strong>
+             加载LLM时传入enable_prefix_caching= True
+            </strong>
+            。
+           </p>
+           <p>
+            CachedBlockAllocator模式核心思想是带有这些相同prefix信息（如"提示词 你是一个助手"）的prompt和decode的token的kv-cache完全可以共享，存放在同一个物理块，达到节省显存的目的。
+           </p>
+           <p>
+            目前我们使用UncachedBlockAllocator的方法也能走通推理流程，CachedBlockAllocator逻辑比较复杂，这篇文章已经写的很长，不再这里展开了，以后有机会再解析吧。
+           </p>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>

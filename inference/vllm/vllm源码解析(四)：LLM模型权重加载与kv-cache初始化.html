@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/weixin_42479327/article/details/141718951" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      vllm源码解析(四)：LLM模型权重加载与kv-cache初始化_vllm dtype half-CSDN博客
+     </title>
+     <meta content="vllm dtype half" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"vllm dtype half"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读5.3k次，点赞34次，收藏32次。图来自B站某个视频，发现找不到原视频了！我们先来看下LLM是怎么结合到vllm中的。这是模型的入口，model_path路径指向下载的。可以看到通过from_engine_args来加载，继续往下看from_engine_args输入参数如下：cls(…, 这在本章开头的结构图中也能清晰看到。tokenizer比较简单，这里略过，schedule在第二篇文章中已经讲过。_vllm dtype half" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-850e130245.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-whitemove/skin-whitemove-2af9149bdc.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            vllm源码解析(四)：LLM模型权重加载与kv-cache初始化
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/weixin_42479327" rel="noopener" target="_blank" title="弈秋001">
+              弈秋001
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCurrentTime2.png"/>
+             <span class="time">
+              于 2024-09-08 13:36:16 发布
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量5.3k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                32
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            34
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"gpt-3","ab":"new","extra":"{\"searchword\":\"gpt-3\"}"}' href="https://so.csdn.net/so/search/s.do?q=gpt-3&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              gpt-3
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' href="https://so.csdn.net/so/search/s.do?q=chatgpt&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              chatgpt
+             </a>
+            </div>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/weixin_42479327/article/details/141718951" target="_blank">
+               https://blog.csdn.net/weixin_42479327/article/details/141718951
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-light" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <h2>
+            <a id="__0">
+            </a>
+            七 模型初始化
+           </h2>
+           <p>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/4dc9646f9b864140b419265721964873.png">
+             <br/>
+             图来自B站某个视频，发现找不到原视频了！
+            </img>
+           </p>
+           <p>
+            我们先来看下LLM是怎么结合到vllm中的。
+           </p>
+           <pre><code class="prism language-python">llm <span class="token operator">=</span> LLM<span class="token punctuation">(</span>model<span class="token operator">=</span>model_path<span class="token punctuation">,</span>
+          dtype<span class="token operator">=</span><span class="token string">'half'</span><span class="token punctuation">,</span>
+          enable_prefix_caching<span class="token operator">=</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+            <span class="token comment"># dtype='float16'</span>
+          <span class="token comment"># 把模型层均分到n个gpu上, 而不是运行n个完整模型</span>
+          <span class="token comment"># tensor_parallel_size=1</span>
+          <span class="token comment"># gpu利用率最大70%</span>
+          <span class="token comment"># gpu_memory_utilization=0.7,</span>
+          <span class="token punctuation">)</span>
+tokenizer <span class="token operator">=</span> AutoTokenizer<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span>model_path<span class="token punctuation">,</span> <span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            这是模型的入口，model_path路径指向下载的
+            <strong>
+             hugging-face模型文件
+            </strong>
+            。
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">LLM</span><span class="token punctuation">:</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+			<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token comment"># 将外部参数映射为EngineArgs的属性,没做其他修改,便于后续参数的管理</span>
+        engine_args <span class="token operator">=</span> EngineArgs<span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">)</span>
+        <span class="token comment"># 使用配置好的engine参数,初始LLMEngine实例</span>
+        self<span class="token punctuation">.</span>llm_engine <span class="token operator">=</span> LLMEngine<span class="token punctuation">.</span>from_engine_args<span class="token punctuation">(</span>engine_args<span class="token punctuation">,</span> usage_context<span class="token operator">=</span>UsageContext<span class="token punctuation">.</span>LLM_CLASS<span class="token punctuation">)</span>
+        <span class="token comment"># 全局唯一id,1个 prompt(一个batch可能包含多条prompt)的视为1个request,为这个prompt分配一个唯一id</span>
+        self<span class="token punctuation">.</span>request_counter <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            可以看到通过from_engine_args来加载，继续往下看
+           </p>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">from_engine_args</span><span class="token punctuation">(</span>
+            cls<span class="token punctuation">,</span>
+            engine_args<span class="token punctuation">:</span> EngineArgs<span class="token punctuation">,</span>
+            usage_context<span class="token punctuation">:</span> UsageContext <span class="token operator">=</span> UsageContext<span class="token punctuation">.</span>ENGINE_CONTEXT<span class="token punctuation">,</span>
+            stat_loggers<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> StatLoggerBase<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token string">"LLMEngine"</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Creates an LLM engine from the engine arguments."""</span>
+        <span class="token comment"># Create the engine configs.</span>
+        engine_config <span class="token operator">=</span> engine_args<span class="token punctuation">.</span>create_engine_config<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        executor_class <span class="token operator">=</span> cls<span class="token punctuation">.</span>_get_executor_cls<span class="token punctuation">(</span>engine_config<span class="token punctuation">)</span>
+        <span class="token comment"># Create the LLM engine.</span>
+        engine <span class="token operator">=</span> cls<span class="token punctuation">(</span>
+                <span class="token operator">**</span>engine_config<span class="token punctuation">.</span>to_dict<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                executor_class<span class="token operator">=</span>executor_class<span class="token punctuation">,</span>
+                log_stats<span class="token operator">=</span><span class="token keyword">not</span> engine_args<span class="token punctuation">.</span>disable_log_stats<span class="token punctuation">,</span>
+                usage_context<span class="token operator">=</span>usage_context<span class="token punctuation">,</span>
+                stat_loggers<span class="token operator">=</span>stat_loggers<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> engine
+</code></pre>
+           <p>
+            from_engine_args输入参数如下：
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/2caec68d088b4e288fb713f7dfb5748b.png">
+             <br/>
+             cls(…) 指向如下代码：
+            </img>
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">LLMEngine</span><span class="token punctuation">:</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span>
+			<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>model_config<span class="token punctuation">.</span>skip_tokenizer_init<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>tokenizer <span class="token operator">=</span> self<span class="token punctuation">.</span>_init_tokenizer<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>detokenizer <span class="token operator">=</span> Detokenizer<span class="token punctuation">(</span>self<span class="token punctuation">.</span>tokenizer<span class="token punctuation">)</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>tokenizer <span class="token operator">=</span> <span class="token boolean">None</span>
+            self<span class="token punctuation">.</span>detokenizer <span class="token operator">=</span> <span class="token boolean">None</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        self<span class="token punctuation">.</span>model_executor <span class="token operator">=</span> executor_class<span class="token punctuation">(</span>
+                model_config<span class="token operator">=</span>model_config<span class="token punctuation">,</span>
+                cache_config<span class="token operator">=</span>cache_config<span class="token punctuation">,</span>
+                parallel_config<span class="token operator">=</span>parallel_config<span class="token punctuation">,</span>
+                scheduler_config<span class="token operator">=</span>scheduler_config<span class="token punctuation">,</span>
+                device_config<span class="token operator">=</span>device_config<span class="token punctuation">,</span>
+                lora_config<span class="token operator">=</span>lora_config<span class="token punctuation">,</span>
+                multimodal_config<span class="token operator">=</span>multimodal_config<span class="token punctuation">,</span>
+                speculative_config<span class="token operator">=</span>speculative_config<span class="token punctuation">,</span>
+                load_config<span class="token operator">=</span>load_config<span class="token punctuation">,</span>
+                prompt_adapter_config<span class="token operator">=</span>prompt_adapter_config<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>model_config<span class="token punctuation">.</span>embedding_mode<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>_initialize_kv_caches<span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token comment"># pipeline_parallel_size:并行的gpu数量, 会把可用的 物理blocks平均分配到并行的gpu上</span>
+        <span class="token comment"># 同时, 每个gpu都会维护一个调度器scheduler, self.scheduler是包含多个scheduler的list</span>
+        self<span class="token punctuation">.</span>scheduler <span class="token operator">=</span> <span class="token punctuation">[</span>
+            Scheduler<span class="token punctuation">(</span>
+                    scheduler_config<span class="token punctuation">,</span> cache_config<span class="token punctuation">,</span> lora_config<span class="token punctuation">,</span>
+                    parallel_config<span class="token punctuation">.</span>pipeline_parallel_size
+            <span class="token punctuation">)</span> <span class="token keyword">for</span> _ <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>parallel_config<span class="token punctuation">.</span>pipeline_parallel_size<span class="token punctuation">)</span>
+        <span class="token punctuation">]</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+</code></pre>
+           <p>
+            可以发现在vllm初始化时，主要初始化4个模块：
+            <strong>
+             tokenizer（分词器），model_executor（tf模型转换到vllm模型），self._initialize_kv_caches（kv block初始化），scheduler （调度器）
+            </strong>
+            , 这在本章开头的结构图中也能清晰看到。
+           </p>
+           <p>
+            tokenizer比较简单，这里略过，schedule在第二篇文章中已经讲过。
+           </p>
+           <p>
+            我们来看下model_executor与_initialize_kv_caches的具体工作，这两部分代码是以后向vllm手动添加新模型（
+            <strong>
+             model_executor
+            </strong>
+            ），优化vllm推理性能（
+            <strong>
+             _initialize_kv_caches
+            </strong>
+            ）的核心代码。
+           </p>
+           <h3>
+            <a id="71_model_executor_111">
+            </a>
+            7.1 model_executor
+           </h3>
+           <p>
+            executor_class继承自基类ExecutorBase，
+            <strong>
+             有cpu_executor,gpu_executor,tpu_executor…,等各种执行器可选
+            </strong>
+            ，由当前设备类型，或指定executor来决定使用哪一个。我们以gpu_executor来说明，其他executor也都大同小异。
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">class</span> <span class="token class-name">GPUExecutor</span><span class="token punctuation">(</span>ExecutorBase<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    uses_ray<span class="token punctuation">:</span> <span class="token builtin">bool</span> <span class="token operator">=</span> <span class="token boolean">False</span>
+
+    <span class="token keyword">def</span> <span class="token function">_init_executor</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Initialize the worker and load the model.
+        """</span>
+        <span class="token keyword">assert</span> self<span class="token punctuation">.</span>parallel_config<span class="token punctuation">.</span>world_size <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>
+            <span class="token string">"GPUExecutor only supports single GPU."</span><span class="token punctuation">)</span>
+
+        self<span class="token punctuation">.</span>driver_worker <span class="token operator">=</span> self<span class="token punctuation">.</span>_create_worker<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>driver_worker<span class="token punctuation">.</span>init_device<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>driver_worker<span class="token punctuation">.</span>load_model<span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    <span class="token keyword">def</span> <span class="token function">execute_model</span><span class="token punctuation">(</span>
+            self<span class="token punctuation">,</span> execute_model_req<span class="token punctuation">:</span> ExecuteModelRequest
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> Optional<span class="token punctuation">[</span>List<span class="token punctuation">[</span>Union<span class="token punctuation">[</span>SamplerOutput<span class="token punctuation">,</span> PoolerOutput<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        output <span class="token operator">=</span> self<span class="token punctuation">.</span>driver_worker<span class="token punctuation">.</span>execute_model<span class="token punctuation">(</span>execute_model_req<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> output
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre>
+           <p>
+            self.driver_worker是work（vllm/worker/worker.py）的一个实例对象（每个gpu上的都维护着自己的Worker实例），
+            <strong>
+             负责维护 KV-cache，并在 GPU 上执行模型
+            </strong>
+            。在分布式推理的情况下，
+            <strong>
+             每个work都会被分配模型的一部分（不同的head并行计算，然后汇总计算结果）
+            </strong>
+            。
+           </p>
+           <p>
+            self.driver_worker.load_model()是加载模型的方法，但经过多层转包后，才能找到真正的初始化模型的代码：
+           </p>
+           <ul>
+            <li>
+             vllm/model_executor/model_loader/loader.py class DefaultModelLoader
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">load_model</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token punctuation">,</span> model_config<span class="token punctuation">:</span> ModelConfig<span class="token punctuation">,</span>
+                   device_config<span class="token punctuation">:</span> DeviceConfig<span class="token punctuation">,</span>
+                   lora_config<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>LoRAConfig<span class="token punctuation">]</span><span class="token punctuation">,</span>
+                   multimodal_config<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>MultiModalConfig<span class="token punctuation">]</span><span class="token punctuation">,</span>
+                   parallel_config<span class="token punctuation">:</span> ParallelConfig<span class="token punctuation">,</span>
+                   scheduler_config<span class="token punctuation">:</span> SchedulerConfig<span class="token punctuation">,</span>
+                   cache_config<span class="token punctuation">:</span> CacheConfig<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> nn<span class="token punctuation">.</span>Module<span class="token punctuation">:</span>
+        target_device <span class="token operator">=</span> torch<span class="token punctuation">.</span>device<span class="token punctuation">(</span>device_config<span class="token punctuation">.</span>device<span class="token punctuation">)</span>
+        <span class="token keyword">with</span> set_default_torch_dtype<span class="token punctuation">(</span>model_config<span class="token punctuation">.</span>dtype<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">with</span> target_device<span class="token punctuation">:</span>
+                model <span class="token operator">=</span> _initialize_model<span class="token punctuation">(</span>model_config<span class="token punctuation">,</span> self<span class="token punctuation">.</span>load_config<span class="token punctuation">,</span>
+                                          lora_config<span class="token punctuation">,</span> multimodal_config<span class="token punctuation">,</span>
+                                          cache_config<span class="token punctuation">,</span> scheduler_config<span class="token punctuation">)</span>
+            model<span class="token punctuation">.</span>load_weights<span class="token punctuation">(</span>
+            	<span class="token comment"># 加载model.safetensors权重文件</span>
+                self<span class="token punctuation">.</span>_get_weights_iterator<span class="token punctuation">(</span>model_config<span class="token punctuation">.</span>model<span class="token punctuation">,</span>
+                                           model_config<span class="token punctuation">.</span>revision<span class="token punctuation">,</span>
+                                           fall_back_to_pt<span class="token operator">=</span><span class="token builtin">getattr</span><span class="token punctuation">(</span>
+                                               model<span class="token punctuation">,</span>
+                                               <span class="token string">"fall_back_to_pt_during_load"</span><span class="token punctuation">,</span>
+                                               <span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">)</span>
+
+            <span class="token keyword">for</span> _<span class="token punctuation">,</span> module <span class="token keyword">in</span> model<span class="token punctuation">.</span>named_modules<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                quant_method <span class="token operator">=</span> <span class="token builtin">getattr</span><span class="token punctuation">(</span>module<span class="token punctuation">,</span> <span class="token string">"quant_method"</span><span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">)</span>
+                <span class="token keyword">if</span> quant_method <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+                    <span class="token comment"># When quant methods need to process weights after loading</span>
+                    <span class="token comment"># (for repacking, quantizing, etc), they expect parameters</span>
+                    <span class="token comment"># to be on the global target device. This scope is for the</span>
+                    <span class="token comment"># case where cpu offloading is used, where we will move the</span>
+                    <span class="token comment"># parameters onto device for processing and back off after.</span>
+                    <span class="token keyword">with</span> device_loading_context<span class="token punctuation">(</span>module<span class="token punctuation">,</span> target_device<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                        quant_method<span class="token punctuation">.</span>process_weights_after_loading<span class="token punctuation">(</span>module<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> model<span class="token punctuation">.</span><span class="token builtin">eval</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            我们解析下涉及的两个主要函数：
+           </p>
+           <ul>
+            <li>
+             vllm/model_executor/model_loader/loader.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python"><span class="token keyword">def</span> <span class="token function">_initialize_model</span><span class="token punctuation">(</span>
+        model_config<span class="token punctuation">:</span> ModelConfig<span class="token punctuation">,</span>
+        load_config<span class="token punctuation">:</span> LoadConfig<span class="token punctuation">,</span>
+        lora_config<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>LoRAConfig<span class="token punctuation">]</span><span class="token punctuation">,</span>
+        multimodal_config<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>MultiModalConfig<span class="token punctuation">]</span><span class="token punctuation">,</span>
+        cache_config<span class="token punctuation">:</span> CacheConfig<span class="token punctuation">,</span>
+        scheduler_config<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>SchedulerConfig<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> nn<span class="token punctuation">.</span>Module<span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Initialize a model with the given configurations."""</span>
+    <span class="token comment"># 通过下载hf模型时自带的config，根据config['architectures']参数，获得当前模型名称</span>
+    model_class <span class="token operator">=</span> get_model_architecture<span class="token punctuation">(</span>model_config<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    <span class="token comment"># 取得量化相关参数，在当前版本中没有启用该参数</span>
+    quant_config <span class="token operator">=</span> _get_quantization_config<span class="token punctuation">(</span>model_config<span class="token punctuation">,</span> load_config<span class="token punctuation">)</span>
+    <span class="token comment"># 通过加载vllm/model_executor/models/llama.py，获得模型结构(这是vllm改造后的结构)</span>
+    <span class="token keyword">return</span> model_class<span class="token punctuation">(</span>config<span class="token operator">=</span>model_config<span class="token punctuation">.</span>hf_config<span class="token punctuation">,</span>
+                       <span class="token comment"># cache_config=cache_config,</span>
+                       <span class="token comment"># quant_config=quant_config,</span>
+                       <span class="token operator">**</span>_get_model_initialization_kwargs<span class="token punctuation">(</span>
+                           model_class<span class="token punctuation">,</span> lora_config<span class="token punctuation">,</span> multimodal_config<span class="token punctuation">,</span>
+                           scheduler_config<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            _initialize_model函数的功能为
+            <strong>
+             通过hf模型的config参数，获得模型名
+            </strong>
+            ，
+            <br/>
+            然后根据这个名称去加载vllm
+            <strong>
+             改造后的该模型模型结构
+            </strong>
+           </p>
+           <p>
+            我们以llama为例来说明如何
+            <strong>
+             加载hf权重
+            </strong>
+            ：
+           </p>
+           <ul>
+            <li>
+             vllm/model_executor/models/llama.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">load_weights</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> weights<span class="token punctuation">:</span> Iterable<span class="token punctuation">[</span>Tuple<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> torch<span class="token punctuation">.</span>Tensor<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># vllm与hf两种模型实现方式之间的名称映射</span>
+        stacked_params_mapping <span class="token operator">=</span> <span class="token punctuation">[</span>
+            <span class="token comment"># (param_name, shard_name, shard_id)</span>
+            <span class="token comment"># vllm, hf,share_id</span>
+            <span class="token punctuation">(</span><span class="token string">".qkv_proj"</span><span class="token punctuation">,</span> <span class="token string">".q_proj"</span><span class="token punctuation">,</span> <span class="token string">"q"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span><span class="token string">".qkv_proj"</span><span class="token punctuation">,</span> <span class="token string">".k_proj"</span><span class="token punctuation">,</span> <span class="token string">"k"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span><span class="token string">".qkv_proj"</span><span class="token punctuation">,</span> <span class="token string">".v_proj"</span><span class="token punctuation">,</span> <span class="token string">"v"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span><span class="token string">".gate_up_proj"</span><span class="token punctuation">,</span> <span class="token string">".gate_proj"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span><span class="token string">".gate_up_proj"</span><span class="token punctuation">,</span> <span class="token string">".up_proj"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token punctuation">]</span>
+        <span class="token comment"># 获得当前vllm改造后llama模型的参数和对应的权重(此时的权重应是随机生成的)</span>
+        params_dict <span class="token operator">=</span> <span class="token builtin">dict</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>named_parameters<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token comment"># 遍历hf模型每层参数的名称和权重</span>
+        <span class="token keyword">for</span> name<span class="token punctuation">,</span> loaded_weight <span class="token keyword">in</span> weights<span class="token punctuation">:</span>
+			<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+            <span class="token comment"># vllm, hf,share_id</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>param_name<span class="token punctuation">,</span> weight_name<span class="token punctuation">,</span> shard_id<span class="token punctuation">)</span> <span class="token keyword">in</span> stacked_params_mapping<span class="token punctuation">:</span>
+                <span class="token keyword">if</span> weight_name <span class="token keyword">not</span> <span class="token keyword">in</span> name<span class="token punctuation">:</span>
+                    <span class="token keyword">continue</span>
+                <span class="token comment"># 将hf模型的层名，替换为vllm中的层名</span>
+                name <span class="token operator">=</span> name<span class="token punctuation">.</span>replace<span class="token punctuation">(</span>weight_name<span class="token punctuation">,</span> param_name<span class="token punctuation">)</span>
+                <span class="token comment"># Skip loading extra bias for GPTQ models.</span>
+                <span class="token keyword">if</span> name<span class="token punctuation">.</span>endswith<span class="token punctuation">(</span><span class="token string">".bias"</span><span class="token punctuation">)</span> <span class="token keyword">and</span> name <span class="token keyword">not</span> <span class="token keyword">in</span> params_dict<span class="token punctuation">:</span>
+                    <span class="token keyword">continue</span>
+
+                <span class="token keyword">if</span> is_pp_missing_parameter<span class="token punctuation">(</span>name<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token keyword">continue</span>
+                <span class="token comment"># 获得vllm改造后llama权重参数</span>
+                param <span class="token operator">=</span> params_dict<span class="token punctuation">[</span>name<span class="token punctuation">]</span>
+                weight_loader <span class="token operator">=</span> param<span class="token punctuation">.</span>weight_loader
+                <span class="token comment"># 将hf模型参数更新到对应的vllm模型参数中,完成权重参数的映射工作</span>
+                weight_loader<span class="token punctuation">(</span>param<span class="token punctuation">,</span> loaded_weight<span class="token punctuation">,</span> shard_id<span class="token punctuation">)</span>
+
+                <span class="token keyword">break</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+				<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+</code></pre>
+           <p>
+            通过上述vllm中llama的load_weights方法(经过观察， 所有decode-only模型的load_weights几乎都一样)，
+            <strong>
+             将vllm模型和hf模型不同参数名之间做映射，之后将hf类型的权重赋值给vllm模型中
+            </strong>
+            （通过参数名联系），至此，完成模型转换工作。
+           </p>
+           <p>
+            注：需要知道模型中有不同结构，所有weight_loader（vllm/model_executor/layers/linear.py）也有多个变体（分布在不同类中）。
+           </p>
+           <p>
+            以对QKV的转换为例说明weight_loader的变换过程（源码比较复杂，这里仅描述下处理逻辑）：
+            <br/>
+            llama3.1的qkv是分开计算的，类似于下面这样
+           </p>
+           <pre><code class="prism language-python">        self<span class="token punctuation">.</span>q <span class="token operator">=</span> nn<span class="token punctuation">.</span>Linear<span class="token punctuation">(</span>dim<span class="token punctuation">,</span> dim_q<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>k <span class="token operator">=</span> nn<span class="token punctuation">.</span>Linear<span class="token punctuation">(</span>dim<span class="token punctuation">,</span> dim_kv<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>v <span class="token operator">=</span> nn<span class="token punctuation">.</span>Linear<span class="token punctuation">(</span>dim<span class="token punctuation">,</span> dim_kv<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            而vllm中会把他们合并起来，类似于下面这样
+           </p>
+           <pre><code class="prism language-python">self<span class="token punctuation">.</span>qkv<span class="token operator">=</span>nn<span class="token punctuation">.</span>Linear<span class="token punctuation">(</span>dim<span class="token punctuation">,</span> dim_q<span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span>dim_kv<span class="token punctuation">,</span> bias<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            通过这个模块的解析，我们可以知道，对未支持的新模型也能通过手动修改load_model源码的方式在vllm中使用。
+           </p>
+           <h3>
+            <a id="72__initialize_kv_caches_262">
+            </a>
+            7.2 _initialize_kv_caches
+           </h3>
+           <p>
+            作用是计算当前blocks总量，可用blocks数量。
+            <br/>
+            tranformers中，一个正常的k/v shape为[
+            <strong>
+             batch_size, nums_head, len_k, head_dim
+            </strong>
+            ]（推理阶段，len_k=1）
+            <br/>
+            vllm中kv_cache_shape=[2, num_blocks, block_size, num_kv_heads, head_size]
+           </p>
+           <p>
+            一个块（block）占用空间的计算公式如下(2表示kv各一个，它们是成对出现的)：2 * block_size * num_head * head_size * num_layers，
+            <br/>
+            即每个 token 对应的 K V 个数为2, 每个块可以存放 block_size 个 token 对应的 K V 值，每个 token 对应的 K V 占用空间为2 * num_head * head_size * num_layers * dtype_size，所以每个块总共要存放block_size * 2 * num_head * head_size * num_layers * dtype_size个值。
+            <br/>
+            num_layers是模型的layers层数，每个token要保存计算过的所有层的kv值，这样才算一个完整的kv-cache。
+           </p>
+           <p>
+            kv每个值占用的空间为 dtype_size 个字节（如果 tensor 的 dtype 为 float16，则 dtype_size 为 2，dtype 为 float32，则 dtype_size 为 4）。
+           </p>
+           <p>
+            一个block占用空间的计算代码如下：
+           </p>
+           <ul>
+            <li>
+             vllm/worker/cache_engine.py
+             <br/>
+             <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/e775f8daf36849638f189f784327e23a.png"/>
+            </li>
+            <li>
+             vllm/engine/llm_engine.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_initialize_kv_caches</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Initialize the KV cache in the worker(s).
+
+        The workers will determine the number of blocks in both the GPU cache
+        and the swap CPU cache.
+        """</span>
+        num_gpu_blocks<span class="token punctuation">,</span> num_cpu_blocks <span class="token operator">=</span> self<span class="token punctuation">.</span>model_executor<span class="token punctuation">.</span>determine_num_available_blocks<span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>num_gpu_blocks <span class="token operator">=</span> num_gpu_blocks
+        self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>num_cpu_blocks <span class="token operator">=</span> num_cpu_blocks
+
+        self<span class="token punctuation">.</span>model_executor<span class="token punctuation">.</span>initialize_cache<span class="token punctuation">(</span>num_gpu_blocks<span class="token punctuation">,</span> num_cpu_blocks<span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            _initialize_kv_caches方法的目的是
+            <strong>
+             计算出GPU/CPU block数量，然后对这些block进行初始化
+            </strong>
+            。
+           </p>
+           <p>
+            计算block数量的方法为self.model_executor.
+            <strong>
+             determine_num_available_blocks
+            </strong>
+            ()
+           </p>
+           <ul>
+            <li>
+             vllm/worker/worker.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">determine_num_available_blocks</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> Tuple<span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token comment"># Profile the memory usage of the model and get the maximum number of</span>
+        <span class="token comment"># cache blocks that can be allocated with the remaining free memory.</span>
+        torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>empty_cache<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># Execute a forward pass with dummy inputs to profile the memory usage</span>
+        <span class="token comment"># of the model.</span>
+        <span class="token comment"># 构建推理允许的最大seq和tokens 数量组成的推理数据，进行不使用kv-cache的模型推理</span>
+        self<span class="token punctuation">.</span>model_runner<span class="token punctuation">.</span>profile_run<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># Calculate the number of blocks that can be allocated with the</span>
+        <span class="token comment"># profiled peak memory.</span>
+        torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>synchronize<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># 记录此时可用的GPU和总GPU数量，此时模型运行占用的GPU显存还没释放</span>
+        free_gpu_memory<span class="token punctuation">,</span> total_gpu_memory <span class="token operator">=</span> torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>mem_get_info<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># peak_memory就是当前模型占用的显存</span>
+        peak_memory <span class="token operator">=</span> self<span class="token punctuation">.</span>init_gpu_memory <span class="token operator">-</span> free_gpu_memory
+		<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+		<span class="token comment"># 获得一个block占用的GPU显存</span>
+        cache_block_size <span class="token operator">=</span> self<span class="token punctuation">.</span>get_cache_block_size_bytes<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># 计算总的可用GPU block数量</span>
+        num_gpu_blocks <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>
+            <span class="token punctuation">(</span>total_gpu_memory <span class="token operator">*</span> self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>gpu_memory_utilization <span class="token operator">-</span>peak_memory<span class="token punctuation">)</span> <span class="token operator">//</span> cache_block_size<span class="token punctuation">)</span>
+        <span class="token comment"># 计算CPU数量,对于CPU，不需要额外计算，因为是固定大小的内存。</span>
+        num_cpu_blocks <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>swap_space_bytes <span class="token operator">//</span> cache_block_size<span class="token punctuation">)</span>
+        num_gpu_blocks <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>num_gpu_blocks<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+        num_cpu_blocks <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span>num_cpu_blocks<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>model_runner<span class="token punctuation">.</span>lora_manager<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>model_runner<span class="token punctuation">.</span>remove_all_loras<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        gc<span class="token punctuation">.</span>collect<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>empty_cache<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> num_gpu_blocks<span class="token punctuation">,</span> num_cpu_blocks
+</code></pre>
+           <p>
+            **self.model_runner.profile_run()**作用是构建假数据，走一遍不使用kv-cache的模型推理，记录此时的GPU占用情况。
+            <br/>
+            profile_run流程如下（代码太多，不在此贴出，代码不难， 想进一步了解细节可去看源码）：
+           </p>
+           <ul>
+            <li>
+             构建假数据
+             <br/>
+             初始化LLMEngine引擎时，会提供两个重要参数（这两个参数在当前版本
+             <strong>
+              由budget管理
+             </strong>
+             ）：
+             <br/>
+             max_num_seqs：在1个推理阶段中，可处理的最大seqs数量
+             <br/>
+             max_num_batched_tokens：在1个推理阶段中，可处理的最大tokens数量
+            </li>
+           </ul>
+           <p>
+            这两个参数值由外部指定， 若未指定， 系统会分配一个。那么如何通过这两个值构建数据呢？
+            <br/>
+            假设在推理过程中，平均一个seq要处理max_num_batched_tokens // max_num_seqs个token，余数部分我们默认放在第一个seq中。
+            <br/>
+            例如，若max_num_batched_tokens=10，max_num_seqs = 3，那么可以构建出3条seq，每个seq的长度分别为4，3，3
+           </p>
+           <p>
+            使用这些空数据，走一遍推理流程，可以
+            <strong>
+             获得模型使用GPU显存的情况
+            </strong>
+            。
+            <br/>
+            （
+            <strong>
+             free_gpu_memory, total_gpu_memory = torch.cuda.mem_get_info()
+            </strong>
+            ）
+           </p>
+           <p>
+            计算出分配多少的显存给KV cache：
+           </p>
+           <ul>
+            <li>
+             分配给KV cache显存 = gpu总显存 - 不使用KV cache做1次推理时的显存占用（包括模型本身和推理过程中的中间数据）
+            </li>
+           </ul>
+           <p>
+            在上述代码中有详细注释。
+           </p>
+           <p>
+            <strong>
+             分配kv-cache
+            </strong>
+            <br/>
+            计算出了可用block数量，接下就能通过
+            <strong>
+             initialize_cache
+            </strong>
+            初始化vllm推理过程中的kv-cache了。
+           </p>
+           <ul>
+            <li>
+             vllm/worker/worker.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_init_cache_engine</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">assert</span> self<span class="token punctuation">.</span>cache_config<span class="token punctuation">.</span>num_gpu_blocks <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span>
+        self<span class="token punctuation">.</span>cache_engine <span class="token operator">=</span> <span class="token punctuation">[</span>
+            CacheEngine<span class="token punctuation">(</span>self<span class="token punctuation">.</span>cache_config<span class="token punctuation">,</span> self<span class="token punctuation">.</span>model_config<span class="token punctuation">,</span>
+                        self<span class="token punctuation">.</span>parallel_config<span class="token punctuation">,</span> self<span class="token punctuation">.</span>device_config<span class="token punctuation">)</span>
+            <span class="token keyword">for</span> _ <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>parallel_config<span class="token punctuation">.</span>pipeline_parallel_size<span class="token punctuation">)</span>
+        <span class="token punctuation">]</span>
+        self<span class="token punctuation">.</span>gpu_cache <span class="token operator">=</span> <span class="token punctuation">[</span>
+            self<span class="token punctuation">.</span>cache_engine<span class="token punctuation">[</span>ve<span class="token punctuation">]</span><span class="token punctuation">.</span>gpu_cache
+            <span class="token keyword">for</span> ve <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>parallel_config<span class="token punctuation">.</span>pipeline_parallel_size<span class="token punctuation">)</span>
+        <span class="token punctuation">]</span>
+</code></pre>
+           <p>
+            初始化kv-cache的工作最终是在
+            <strong>
+             CacheEngine
+            </strong>
+            的__init__()函数中完成，层层嵌套，vllm架构越来复杂了。
+           </p>
+           <ul>
+            <li>
+             vllm_module/worker/cache_engine.py
+            </li>
+           </ul>
+           <pre><code class="prism language-python">    <span class="token keyword">def</span> <span class="token function">_allocate_kv_cache</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span>
+        num_blocks<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
+        device<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> List<span class="token punctuation">[</span>torch<span class="token punctuation">.</span>Tensor<span class="token punctuation">]</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Allocates KV cache on the specified device."""</span>
+        <span class="token comment"># shape=[num_blocks, block_size，num_kv_heads，head_size]</span>
+        kv_cache_shape <span class="token operator">=</span> self<span class="token punctuation">.</span>attn_backend<span class="token punctuation">.</span>get_kv_cache_shape<span class="token punctuation">(</span>
+            num_blocks<span class="token punctuation">,</span> self<span class="token punctuation">.</span>block_size<span class="token punctuation">,</span> self<span class="token punctuation">.</span>num_kv_heads<span class="token punctuation">,</span> self<span class="token punctuation">.</span>head_size<span class="token punctuation">)</span>
+        
+        pin_memory <span class="token operator">=</span> is_pin_memory_available<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">if</span> device <span class="token operator">==</span> <span class="token string">"cpu"</span> <span class="token keyword">else</span> <span class="token boolean">False</span>
+        kv_cache<span class="token punctuation">:</span> List<span class="token punctuation">[</span>torch<span class="token punctuation">.</span>Tensor<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># 遍历每一层，一个token的完整kv-cache包含所有层的子kv</span>
+        <span class="token keyword">for</span> _ <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>num_attention_layers<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token comment"># null block in CpuGpuBlockAllocator requires at least that</span>
+            <span class="token comment"># block to be zeroed-out.</span>
+            <span class="token comment"># We zero-out everything for simplicity.</span>
+            kv_cache<span class="token punctuation">.</span>append<span class="token punctuation">(</span>
+                torch<span class="token punctuation">.</span>zeros<span class="token punctuation">(</span>kv_cache_shape<span class="token punctuation">,</span>
+                            dtype<span class="token operator">=</span>self<span class="token punctuation">.</span>dtype<span class="token punctuation">,</span>
+                            pin_memory<span class="token operator">=</span>pin_memory<span class="token punctuation">,</span>
+                            device<span class="token operator">=</span>device<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> kv_cache
+</code></pre>
+           <p>
+            最终kv-cache的样子（显卡：RTX4090，模型：Meta-Llama-3.1-8B-Instruct）如下：
+            <br/>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/fb499fc239264688868eca2fdbdc8be1.png"/>
+           </p>
+           <p>
+            kv-cache.shape每个维度代表含义如下：
+           </p>
+           <p>
+            list 28：当前模型有28层，每层都要保持当前层计算的kv
+           </p>
+           <p>
+            内部元素的shape含义：
+           </p>
+           <ul>
+            <li>
+             2：分别存储k和v的计算结果
+            </li>
+            <li>
+             2760：当前GPU有2760个block
+            </li>
+            <li>
+             16：每个block有16个槽位，即可以放16个k或v的值
+            </li>
+            <li>
+             8：当前模型head数量
+            </li>
+            <li>
+             128：每个head的head_size
+            </li>
+           </ul>
+           <p>
+            这个kv-cache就是推理过程中用于存储kv值的容器，这里一次性初始好，全部填充为0，所以在实际推理过程中会发现，vllm会直接把显存占用爆涨到一个很大值，就是因为初始化了很多预填充kv-cache的block。
+           </p>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>
