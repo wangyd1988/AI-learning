@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/qq_52053775/article/details/138318523" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      大模型（LLM）的推理加速_大模型推理加速-CSDN博客
+     </title>
+     <meta content="大模型推理加速" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"大模型推理"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读8.9k次，点赞40次，收藏40次。本文分析了大模型（如LLM）在推断阶段的效率问题，探讨了数据层面、模型层面和系统层面的优化策略。数据层面的优化包括输入压缩和输出组织，模型层面涉及结构设计和压缩，系统层面关注推理引擎优化和硬件加速。文章还讨论了MoE、注意力计算、模型量化、稀疏化等关键技术，并提出了未来研究方向，如非传统结构探索、动态推理和边缘部署的挑战。" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-af0ead44cd.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      #content_views{
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none; 
+            user-select: none; 
+        }
+     </style>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-yellow/skin-yellow-28d34ab5fa.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            大模型（LLM）的推理加速
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="follow-nickName" href="https://blog.csdn.net/qq_52053775" rel="noopener" target="_blank" title="樱花的浪漫">
+              樱花的浪漫
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCurrentTime2.png"/>
+             <span class="time">
+              于 2024-05-02 15:00:59 发布
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量8.9k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                40
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            40
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              分类专栏：
+             </span>
+             <a class="tag-link" href="https://blog.csdn.net/qq_52053775/category_12638534.html" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"神经网络","ab":"new","extra":"{\"searchword\":\"神经网络\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"神经网络","ab":"new","extra":"{\"searchword\":\"神经网络\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              神经网络
+             </a>
+            </div>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/qq_52053775/article/details/138318523" target="_blank">
+               https://blog.csdn.net/qq_52053775/article/details/138318523
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <div id="blogColumnPayAdvert">
+         <div class="column-group">
+          <div class="column-group-item column-group0 column-group-item-one">
+           <div class="item-l">
+            <a class="item-target" data-report-click='{"spm":"1001.2101.3001.6332"}' data-report-view='{"spm":"1001.2101.3001.6332"}' href="https://blog.csdn.net/qq_52053775/category_12638534.html" target="_blank" title="自然语言处理">
+             <img alt="" class="item-target" src="https://i-blog.csdnimg.cn/blog_column_migrate/84b63dd1d12cccd91125950111daecda.jpeg?x-oss-process=image/resize,m_fixed,h_224,w_224"/>
+             <span class="title item-target">
+              <span>
+               <span class="tit">
+                自然语言处理
+               </span>
+               <span class="dec">
+                专栏收录该内容
+               </span>
+              </span>
+             </span>
+            </a>
+           </div>
+           <div class="item-m">
+            <span>
+             58 篇文章
+            </span>
+            <span class="old-add-new-box">
+             <span class="price">
+              ¥9.90
+             </span>
+             <span class="oldprice">
+              ¥99.00
+             </span>
+            </span>
+           </div>
+           <div class="item-r">
+            <a class="item-target article-column-subscribe">
+             已订阅
+            </a>
+            <a class="item-target column-studyvip-discount column-studyvip-pass" data-report-click='{"spm":"1001.2015.3001.8590"}' data-report-view='{"spm":"1001.2015.3001.8590"}'>
+             8折续费
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div class="learning_the_member_box">
+         <a href="https://www.csdn.net/vip?utm_source=bkzl_cjhy_ckqy" target="_blank">
+          <div class="left">
+           <img alt="" src="https://csdnimg.cn/release/blogv2/dist/pc/img/iconVIpCrown.png"/>
+           <span>
+            您已是超级会员，正在免费阅读会员专享内容
+           </span>
+          </div>
+          <div class="right">
+           <span>
+            查看更多超级会员权益
+           </span>
+           <img alt="" src="https://csdnimg.cn/release/blogv2/dist/components/img/vipIconArrowLeftWhite.png"/>
+          </div>
+         </a>
+        </div>
+        <div class="ai-abstract-box">
+         <div class="ai-abstract">
+          <div class="abstract-content">
+           <img alt="" class="lock-img" src="https://img-home.csdnimg.cn/images/20240711042549.png"/>
+           本文分析了大模型（如LLM）在推断阶段的效率问题，探讨了数据层面、模型层面和系统层面的优化策略。数据层面的优化包括输入压缩和输出组织，模型层面涉及结构设计和压缩，系统层面关注推理引擎优化和硬件加速。文章还讨论了MoE、注意力计算、模型量化、稀疏化等关键技术，并提出了未来研究方向，如非传统结构探索、动态推理和边缘部署的挑战。
+          </div>
+          <p>
+           摘要生成于
+           <a data-report-click='{"spm":"3001.10128","extra":{"location":"ai_abstract","text":"C知道"}}' data-report-query="spm=3001.10128" data-report-view='{"spm":"3001.10128","extra":{"location":"ai_abstract"}}' href="https://ai.csdn.net?utm_source=cknow_pc_ai_abstract" target="_blank">
+            C知道
+           </a>
+           ，由 DeepSeek-R1 满血版支持，
+           <a data-report-click='{"spm":"3001.10128","extra":{"location":"ai_abstract","text":"前往体验"}}' data-report-query="spm=3001.10128" href="https://ai.csdn.net?utm_source=cknow_pc_ai_abstract" target="_blank">
+            前往体验 &gt;
+           </a>
+          </p>
+         </div>
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="htmledit_views" id="content_views">
+           <div>
+            <span style="color:#000000;">
+             A Survey on Efficient Inference for Large Language Models
+            </span>
+           </div>
+           <div>
+            <span style="color:#000000;">
+             论文地址：
+            </span>
+            <a href="https://arxiv.org/abs/2404.14294" rel="nofollow" title="https://arxiv.org/abs/2404.14294">
+             https://arxiv.org/abs/2404.14294
+            </a>
+           </div>
+           <h2>
+            <span style="color:#000000;">
+             1.概述
+            </span>
+           </h2>
+           <p>
+            <span style="color:#000000;">
+            </span>
+            论文分析并总结了如何提高大型语言模型（LLM）在推断阶段的效率。文中指出，尽管LLM在多种任务中表现出色，但它们在资源有限的环境中的部署却面临着由于
+            <strong>
+             模型大小、注意力机制的复杂性和自回归解码
+            </strong>
+            过程所带来的计算和存储成本的挑战。文章通过建立一个包含
+            <strong>
+             数据层面、模型层面和系统层面优化
+            </strong>
+            的全面分类体系，探讨了当前文献中的不同优化策略，并进行了一系列比较实验，以提供定量见解。最后，文中还总结了现有知识并讨论了未来的研究方向。
+           </p>
+           <h2>
+            2.背景知识
+           </h2>
+           <h3>
+            （1）Transformer
+           </h3>
+           <p>
+            Transformer由注意力机制和FFN层构成，
+            <strong>
+             自注意力机制带来大量的计算量，计算复杂性随着输入长度的增加而呈二次方增长，而FFN层带来了巨大的参数量。
+            </strong>
+           </p>
+           <p>
+            <img alt="" height="62" src="https://i-blog.csdnimg.cn/blog_migrate/0ad9fb18fb2f4d603bca22c2df2146a2.png" width="505"/>
+           </p>
+           <p>
+            <img alt="" height="40" src="https://i-blog.csdnimg.cn/blog_migrate/9f6106328b240c8f732a8860250593ae.png" width="400"/>
+           </p>
+           <h3>
+            （2） LLM的推断过程
+           </h3>
+           <p>
+            与GPT一样，大语言模型的推断过程是一个自回归过程，可以分为
+            <strong>
+             预填充阶段和解码阶段：
+            </strong>
+           </p>
+           <p>
+            <strong>
+             预填充阶段
+            </strong>
+            : 在预填充阶段，模型接收一个输入序列，如 "I", "like", "natural", "language"，并将其转换为一系列的嵌入向量，这些向量通过MHSA模块处理，生成相应的键（K）和值（V）用于注意力计算。这一阶段结束时，
+            <strong>
+             模型生成第一个输出token，并建立起KV缓存以备后续使用。
+            </strong>
+           </p>
+           <p>
+            <strong>
+             解码阶段
+            </strong>
+            : 在解码阶段，模型逐一生成剩余的输出令牌。每一步，它利用现有的KV缓存中的信息来生成下一个令牌，而不需要重新处理整个序列。
+            <strong>
+             随着每个新令牌的生成，KV缓存相应更新，从而使得解码过程更为高效。即
+            </strong>
+            对于第N个token，其隐层特征得到后，经过投影矩阵
+            <img alt="W^{Q},W^{K},W^{V}" class="mathcode" src="https://latex.csdn.net/eq?W%5E%7BQ%7D%2CW%5E%7BK%7D%2CW%5E%7BV%7D">
+             得到
+             <img alt="Q_{n},K_{n},V_{n}" class="mathcode" src="https://latex.csdn.net/eq?Q_%7Bn%7D%2CK_%7Bn%7D%2CV_%7Bn%7D">
+              其中
+              <img alt="Q_{n}" class="mathcode" src="https://latex.csdn.net/eq?Q_%7Bn%7D">
+               为下一个token预测时的Q，而
+               <img alt="K_{n}" class="mathcode" src="https://latex.csdn.net/eq?K_%7Bn%7D">
+                和
+                <img alt="V_{n}" class="mathcode" src="https://latex.csdn.net/eq?V_%7Bn%7D">
+                 则加入缓存，这样KV缓存就包含了从第1个到第N个token的所有键和值。以作为下一个token预测的K和V。
+                </img>
+               </img>
+              </img>
+             </img>
+            </img>
+           </p>
+           <p>
+            <img alt="" height="320" src="https://i-blog.csdnimg.cn/blog_migrate/8c24d55f0a390f3b506d8cdd884e52ee.png" width="517"/>
+           </p>
+           <p>
+            <strong>
+             效率分析：
+            </strong>
+            模型大小、注意力操作的计算复杂性和自回归解码都会对计算成本与内存使用造成影响。
+            <strong>
+             在预填充阶段，模型必须处理长输入序列，导致内存使用率和访问频率增加，
+            </strong>
+            尤其是存储权重的模型尺寸增大导致存储需求增加。在解码阶段，由于自回归性质，
+            <strong>
+             每生成一个token就要加载整个模型，导致内存访问成本增加，而且随着输入序列的增长，KV缓存的大小也线性增长
+            </strong>
+            ，这可能导致内存碎片和不规则的内存访问模式。这些因素共同作用，对LLM的推断效率产生了显著影响。
+           </p>
+           <p>
+            <img alt="" height="338" src="https://i-blog.csdnimg.cn/blog_migrate/f3947b452a20214660f83d26a0e5eda6.png" width="495"/>
+           </p>
+           <h2>
+            3.推理优化策略
+           </h2>
+           <p>
+            大模型的推理优化根据其侧重点可以分为3种层次：
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               数据层面的优化 (Data-level Optimization)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               关注于通过优化输入提示（如输入压缩）或更好地组织输出内容（如输出组织）来提升效率。
+              </li>
+              <li>
+               这类优化通常不会改变原始模型，因此可以避免昂贵的模型训练成本。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               模型层面的优化 (Model-level Optimization)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               涉及设计高效的模型结构或压缩预训练模型以提高推断效率。
+              </li>
+              <li>
+               这种优化可能需要重新进行昂贵的预训练或少量的微调来保持或恢复模型的能力，并且通常会导致模型性能有所损失。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               系统层面的优化 (System-level Optimization)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               旨在优化推理引擎或服务系统，这种优化不涉及成本高昂的模型训练，通常对模型性能没有损失。
+              </li>
+              <li>
+               此外，还有一些硬件加速器设计方法。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="577" src="https://i-blog.csdnimg.cn/blog_migrate/cf65f381a781fdeae9d8533768fee799.png" width="559"/>
+           </p>
+           <h2>
+            4.数据层面的优化
+           </h2>
+           <p>
+            <strong>
+             输入压缩
+            </strong>
+            和
+            <strong>
+             输出组织
+            </strong>
+            是数据层面优化的两个关键方面：
+           </p>
+           <h3>
+            （1）输入压缩
+           </h3>
+           <p>
+            输入压缩旨在通过简化模型的输入来减少所需的计算资源。各种技术包括：
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               提示修剪 (Prompt Pruning)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               目标是去除输入中不重要的tokens、句子或元素，使输入更为简洁，从而减少推断过程中的计算负荷。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               提示摘要 (Prompt Summary)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               将原始输入压缩成更短的摘要形式，仍然能够保留关键信息以生成有效的输出。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               软提示基于压缩 (Soft Prompt-based Compression)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               使用软提示技术，在模型输入中嵌入的一小段可学习的token表示，使其通过Transformer的注意力机制整合整个输入，从达到以这段小的token表示代替原本的长的输入token
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               检索增强生成 (Retrieval-Augmented Generation)
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               检索增强生成（RAG）是旨在提升语言模型输出质量的技术，它通过将检索到的外部知识集成到生成过程中来实现这一点。RAG的关键在于，
+               <strong>
+                它只将相关的信息添加到模型的输入提示中，避免了创建过长的输入序列。这种方法使得模型在生成响应时能够考虑到更广泛的知识，同时减少不必要的输入长度，并有助于降低计算成本。
+               </strong>
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="244" src="https://i-blog.csdnimg.cn/blog_migrate/7acdb16aadb78a0235303a377e224129.png" width="710"/>
+           </p>
+           <h3>
+            （2）输出组织
+           </h3>
+           <p>
+            输出组织方法旨在优化大型语言模型（LLM）的文本生成过程，特别是当涉及到长文本输出时。
+            <strong>
+             这种方法通过先规划文本的结构然后再填充内容来部分并行化生成过程
+            </strong>
+            ，从而提高效率和产出的组织性。例如，Skeleton-of-Thought (SoT) 的方法。SoT旨在通过并行化生成过程来减少语言模型的时间消耗。它分为两个阶段：首先是生成答案的简短“骨架”，然后是展开这个骨架的各个部分以生成详细的输出。这种方法提高了生成长文本的效率，并且通过缓存共享优化了重复使用率。
+           </p>
+           <p>
+            <img alt="" height="202" src="https://i-blog.csdnimg.cn/blog_migrate/662d337872d5d3396bc9a45b5d538571.png" width="397"/>
+           </p>
+           <p>
+           </p>
+           <p>
+            随着LLMs变得更加复杂，它们处理更长的输入和生成更大的输出，因此优化计算资源的使用变得至关重要。输入压缩技术通常致力于减少模型必须处理的数据量，而输出组织策略则旨在使生成过程更加高效。
+            <strong>
+             两种方法都试图在保持输出质量的同时减少LLMs的计算和内存要求。
+            </strong>
+           </p>
+           <h2>
+            <strong>
+             5.模型层面的优化
+            </strong>
+           </h2>
+           <p>
+            模型层面优化主要采用两种策略，以提高大型语言模型（LLM）在推断时的效率。这些优化主要集中在改善模型结构和数据表示方面。
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               高效结构设计
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               这类优化包括设计更加高效的模型结构，并调整推断时的架构以减少推断时的计算成本。这通常意味着需要从头开始训练模型，以便模型结构能够适应其高效性。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               模型压缩
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               另一个策略是压缩预训练模型，通过减少模型大小来降低推断时的资源需求。这种压缩模型通常只需要很少的微调，就能恢复到其原始的性能水平。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            此外，数据表示优化，如模型量化，也常被用来减少模型在存储和计算时的资源消耗。通过量化技术，可以将模型权重和激活函数转换为低位宽格式，以减少模型的内存占用，并加速计算过程。
+           </p>
+           <h3>
+            （1）高效结构设计
+           </h3>
+           <p>
+            大模型普遍采用了Transformer架构，其两个核心组件——前馈网络（FFN）和注意力操作——在推断时面临着效率挑战：
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               前馈网络（FFN）
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               FFN在模型参数中占据了大量比例，导致显著的内存占用和存储成本。例如，在LLaMA-7B模型中，FFN模块的参数占总数的63.01%，而在LLaMA-70B模型中占71.69%。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               注意力操作
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               注意力机制的计算复杂性随输入长度的增加呈二次方增长，这使得处理长输入上下文时的计算成本和内存使用尤其显著。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            为了解决这些效率问题，现有研究集中于开发更有效的模型结构。具体策略包括：
+           </p>
+           <ul>
+            <li>
+             设计更高效的FFN结构。
+            </li>
+            <li>
+             改进注意力设计。
+            </li>
+            <li>
+             开发Transformer的替代模型。
+            </li>
+           </ul>
+           <p>
+            这些策略旨在减少LLM在推断过程中的资源消耗，同时保持甚至提高模型性能。
+           </p>
+           <p>
+            <img alt="" height="274" src="https://i-blog.csdnimg.cn/blog_migrate/9b651fddcdd1d8219ad4e69fddaf1c4f.png" width="595"/>
+           </p>
+           <h4>
+            对前馈网络FFN的设计：
+           </h4>
+           <p>
+            MoE的核心思想是动态地将计算资源分配给输入token中的“专家”网络，其中每个“专家”是FFN中的一部分，专门处理输入的一部分。这样可以在不增加整体计算需求的情况下，有效地提高处理能力和效率。
+           </p>
+           <p>
+            <strong>
+             MoE的设计和优化
+            </strong>
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               MoE FFN设计
+              </strong>
+              :
+             </p>
+             <ul>
+              <li>
+               通过并行部署多个专家并为每个输入token动态选择合适的专家来处理，MoE设计旨在提升模型的灵活性和效率。
+              </li>
+              <li>
+               某些研究集中于优化专家的选择过程，以确保计算负载均衡，例如通过改进专家的路由机制。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               路由问题优化
+              </strong>
+              :
+             </p>
+             <ul>
+              <li>
+               传统MoE实现中存在的一个关键挑战是如何有效地将输入令牌分配给适当的专家，以避免计算资源浪费或负载不均。
+              </li>
+              <li>
+               研究人员提出了多种方法来解决这一问题，例如引入损失函数来优化路由决策的稳定性和效率。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               训练方法改进
+              </strong>
+              :
+             </p>
+             <ul>
+              <li>
+               MoE模型的另一个挑战是在训练过程中保持稳定性。为了解决这个问题，提出了一些方法，比如在训练初期使用固定的路由策略，然后逐渐引入动态路由。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               新型MoE应用
+              </strong>
+              :
+             </p>
+             <ul>
+              <li>
+               随着MoE模型的发展，一些新型应用也被提出，例如在MoE结构中逐步增加活跃专家的数量，以及使用不同尺寸的模型来处理不同的任务。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h4>
+            高效的注意力计算设计：
+           </h4>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               多查询注意力（MQA）
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               MQA通过在不同的注意力头间共享键（K）和值（V）来优化注意力操作，而保持不同的查询（Q）矩阵。这种方法减少了内存访问成本和计算复杂性，同时保证了模型性能的最小影响。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               分组查询注意力（GQA）
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               GQA是MQA的扩展，它将注意力头分组，并在每个组内共享K和V矩阵，进一步减少了计算复杂性和内存需求。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               低复杂度注意力
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               设计低复杂度的注意力机制，目的是减少注意力计算的开销。例如，通过将K和V矩阵转换为固定长度，然后再用小型query处理，这种方法被称为打包和解包注意力。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               核心化注意力（Kernel-based Attention）
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               使用核函数近似非线性的Softmax运算，核心化注意力通过线性化Softmax计算来减少复杂性，从而实现更快的处理速度和更低的资源消耗。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h4>
+            Transformer替代架构：
+           </h4>
+           <h4>
+            transformer的替代架构及其效率：
+            <img alt="" height="251" src="https://i-blog.csdnimg.cn/blog_migrate/d7ae854eee0c432edbb49670049e1a83.png" width="969"/>
+            效率分析：
+           </h4>
+           <p>
+            <strong>
+             训练阶段的效率
+            </strong>
+           </p>
+           <ul>
+            <li>
+             许多研究如S4、Hyena、RetNet等专注于在训练过程中保持并行性，采用了卷积或注意力机制。这种设计允许同时处理多个输入序列，从而提高了训练效率。
+            </li>
+            <li>
+             Mamba架构通过并行扫描技术处理输入序列，利用训练并行性来加速数据处理过程。
+            </li>
+           </ul>
+           <p>
+            <strong>
+             推断阶段的优化
+            </strong>
+           </p>
+           <ul>
+            <li>
+             在推断过程中，大多数研究选择使用循环架构以保持线性的计算复杂性，特别是在预填充阶段。这有助于控制在处理长序列时的计算资源需求。
+            </li>
+            <li>
+             在解码阶段，这些新型架构通过消除传统Transformer模型中对先前token特征的缓存需求，从而显著减少了内存访问成本。这种设计使得模型在解码时不受输入长度的影响，从而节省了大量的内存资源。
+            </li>
+           </ul>
+           <h3>
+            （2）模型压缩
+           </h3>
+           <p>
+            模型压缩包含模型量化、稀疏化、知识蒸馏、结构优化和动态推理
+           </p>
+           <p>
+            <img alt="" height="601" src="https://i-blog.csdnimg.cn/blog_migrate/6b0ccb9013c10950d01a1518bc7af026.png" width="630"/>
+           </p>
+           <h4>
+            模型量化：
+           </h4>
+           <p>
+            量化策略可分为
+            <strong>
+             后训练量化（Post-Training Quantization, PTQ）
+             <strong>
+              和
+             </strong>
+             量化感知训练（Quantization-Aware Training, QAT）
+            </strong>
+            。
+           </p>
+           <p>
+            <strong>
+             后训练量化（Post-Training Quantization, PTQ）
+            </strong>
+           </p>
+           <p>
+            PTQ是在模型训练完成后实施的量化过程，目的是将模型参数（包括权重和激活）从高精度格式转换为低精度格式，而不进行额外的训练。可分为权重只量化和权重激活量化
+           </p>
+           <p>
+            <strong>
+             权重只量化（Weight-only Quantization）
+            </strong>
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               权重量化
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               权重从浮点数（例如FP16）转换成低精度整数（如INT8）。这一步骤在推理之前完成，目的是减少模型的大小和加快权重加载的速度。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               推理过程
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               在进行实际的矩阵乘法（如GEMM/GEMV）操作时，量化的权重被“反量化”（De-quantize）回浮点数，以执行高精度的计算。
+              </li>
+              <li>
+               结果累积在浮点格式（FP16）中，以保持计算过程中的精度。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               优势与用途
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               由于权重占用的内存减少，加载和计算的速度提高，非常适合内存受限的设备。
+              </li>
+              <li>
+               主要缺点是激活值未被量化，可能会限制整体计算速度的提升。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <strong>
+             权重-激活量化（Weight-Activation Quantization）
+            </strong>
+           </p>
+           <ul>
+            <li>
+             <strong>
+              权重量化
+             </strong>
+             ：在推理前，权重从浮点数（FP16）被量化为低精度整数格式（INT8）。在推理过程中，这些量化的权重直接用于计算，没有进行反量化步骤。
+            </li>
+            <li>
+             <strong>
+              激活量化
+             </strong>
+             ：在进行计算之前，激活值被量化为低精度整数格式（如INT8），以减少计算中的内存占用和加速计算过程。
+            </li>
+            <li>
+             <strong>
+              计算
+             </strong>
+             ：使用量化的权重和激活值执行整数矩阵乘法操作（GEMM/GEMV），并在INT8累加器中累积结果。
+            </li>
+            <li>
+             <strong>
+              激活反量化
+             </strong>
+             ：计算完成后，得到的结果（通常为累加后的INT32格式）被反量化回高精度格式（FP16），以进行后续的激活或输出处理。
+            </li>
+            <li>
+             <strong>
+              优势与用途：
+             </strong>
+             权重-激活量化通过在整个推理过程中应用量化和反量化操作，优化了计算资源的使用，使模型更适合在性能受限的环境中运行。
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="267" src="https://i-blog.csdnimg.cn/blog_migrate/fcb126098dc09b43fc77f69dd72e886c.png" width="322"/>
+           </p>
+           <p>
+            <img alt="" height="326" src="https://i-blog.csdnimg.cn/blog_migrate/cd6f42af53485fbbd25dd03ea55faf1e.png" width="792"/>
+           </p>
+           <p>
+            <strong>
+             量化感知训练（Quantization-Aware Training, QAT）
+            </strong>
+           </p>
+           <ul>
+            <li>
+             <strong>
+              定义
+             </strong>
+             ：QAT从训练开始便将量化过程整合到训练中，使模型在训练过程中适应低精度的操作。这种方法通常可以产生在量化状态下表现更好的模型。
+            </li>
+            <li>
+             <strong>
+              关键特点
+             </strong>
+             ：
+             <ul>
+              <li>
+               <strong>
+                权重和激活同时量化
+               </strong>
+               ：权重和激活在训练过程中均以低精度格式进行处理。这要求训练算法和损失函数对低精度带来的误差具有一定的容忍度。
+              </li>
+              <li>
+               <strong>
+                动态调整
+               </strong>
+               ：训练过程中，量化参数（如比例因子和零点）可以根据数据分布的变化进行动态调整，以最优化模型在量化条件下的性能。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            这两种量化策略各有利弊，选择哪种策略取决于具体需求、模型的复杂度以及部署环境。PTQ更快速且成本较低，适合对推理性能要求不是极端严格的应用；而QAT虽然成本和时间投入更高，但能更好地保持模型的准确性和复杂功能。
+           </p>
+           <p>
+            <img alt="" height="94" src="https://i-blog.csdnimg.cn/blog_migrate/ad6d8f2f2d4843bf0568852e046451c2.png" width="433"/>
+           </p>
+           <p>
+            总结分析：
+           </p>
+           <p>
+            本节分析了使用权重量化（W4A16）技术对大型语言模型（LLaMA-2-7B 和 LLaMA-2-13B）推理性能的影响。分析主要基于两个框架：TensorRT-LLM 和 LMDeploy，测试不同的批处理大小（B）和输入上下文长度（从128到2048）。
+           </p>
+           <p>
+            <img alt="" height="369" src="https://i-blog.csdnimg.cn/blog_migrate/03a59a43bae038c35d22bc68a192cbde.png" width="613"/>
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               权重量化对解码阶段的加速效果显著
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               权重量化显著加速了模型的解码阶段，提高了端到端的推理速度。这一加速主要得益于使用低精度权重，这些权重能够快速地从高带宽内存（例如HBM）中加载并处理。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               预填充阶段延迟的增加
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               尽管权重量化在解码阶段提供了显著的性能提升，预填充阶段的延迟却有所增加。这可能是因为虽然内存访问需求减少，但处理低精度数据的计算瓶颈在某些情况下导致了更高的处理延迟。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               大批量和长上下文长度的挑战
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               随着批处理大小和输入上下文长度的增加，解码阶段的性能提升效果逐渐减少。在某些情况下，尤其是在大批量和长上下文长度的组合下，甚至出现了内存不足（OOM）的情况，显示出在这些配置下的硬件资源限制。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               性能与资源需求的权衡
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               表格数据显示，在大型模型和大规模输入场景下，权重量化尽管能够减少内存占用和访问成本，但其对延迟的减少作用随着计算需求的增加而减弱。这种现象突出了在资源受限的部署环境中实施量化策略时需要考虑的复杂性和权衡。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h4>
+            稀疏化：
+           </h4>
+           <p>
+            <strong>
+             权重修剪：
+            </strong>
+            稀疏化是一种通过增加模型中零元素的比例来减少计算和内存需求的技术，特别适用于大型语言模型（LLMs）。在稀疏化的上下文中，权重修剪是一种关键策略，它通过移除模型中被认为不重要的权重来减轻模型的负担。权重修剪可以细分为两种主要方法：
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               非结构化修剪（Unstructured Pruning）
+              </strong>
+             </p>
+             <ul>
+              <li>
+               这种修剪方法涉及移除单个权重，通常基于权重的重要性，如小的或接近零的权重。
+              </li>
+              <li>
+               优点是可以达到高稀疏度，从而在理论上显著减少模型的大小。
+              </li>
+              <li>
+               缺点是可能导致不规则的内存访问模式，这会降低现代硬件加速器的性能优化潜力。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               结构化修剪（Structured Pruning）
+              </strong>
+             </p>
+             <ul>
+              <li>
+               这种方法涉及按更大的结构单元修剪，例如按整个通道或层修剪。
+              </li>
+              <li>
+               优点是保持了数据的规则结构，更易于硬件实现优化，提高了计算效率。
+              </li>
+              <li>
+               缺点是可能不会达到与非结构化修剪相同的稀疏度，因为它牺牲的是完整的结构单元。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="189" src="https://i-blog.csdnimg.cn/blog_migrate/1504ccd7fac82246d3ebccbfe706b9ea.png" width="397"/>
+           </p>
+           <p>
+            <strong>
+             稀疏注意力：
+            </strong>
+            稀疏注意力包含静态稀疏注意力和动态稀疏注意力
+           </p>
+           <p>
+            <strong>
+             静态稀疏注意力模式
+            </strong>
+            ：静态稀疏模式是在模型训练之前预定义的，不随输入变化而改变。
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               局部、全局和随机注意力模式（图a）
+              </strong>
+              :
+             </p>
+             <ul>
+              <li>
+               <strong>
+                局部（Local）
+               </strong>
+               ：仅关注邻近的几个词，形成稀疏模式，主要关注短距离依赖。
+              </li>
+              <li>
+               <strong>
+                全局（Global）
+               </strong>
+               ：选择特定的全局关键词进行关注，如句首词或特定位置的词，用于捕捉长距离依赖。
+              </li>
+              <li>
+               <strong>
+                随机（Random）
+               </strong>
+               ：随机选择关注点，增加模型关注范围的不确定性，有助于模型探索和泛化。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               膨胀注意力模式（图b）
+              </strong>
+              :
+             </p>
+             <ul>
+              <li>
+               使用不同的膨胀率（Dilated rates），例如1/2/8，这种模式可以在保持计算稀疏性的同时，覆盖更广的输入范围。类似于膨胀卷积，这种方法能够有效地增加感受野，同时减少计算复杂度。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <strong>
+             动态稀疏注意力模式
+            </strong>
+            ：动态稀疏模式根据输入动态调整，实时确定关注的区域，以优化计算资源。
+           </p>
+           <ul>
+            <li>
+             <strong>
+              动态token修剪（图c和图d）
+             </strong>
+             :
+             <ul>
+              <li>
+               <strong>
+                静态修剪（图c）
+               </strong>
+               ：在固定的模式中，某些位置的注意力被永久地修剪掉，不参与计算。
+              </li>
+              <li>
+               <strong>
+                动态修剪（图d）
+               </strong>
+               ：根据输入的具体内容动态选择修剪的位置。例如，可能基于输入的特定特征或上下文动态调整哪些键-值对应被计算。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="368" src="https://i-blog.csdnimg.cn/blog_migrate/b9c517a4cae999428aa97d49013ed37f.png" width="327"/>
+           </p>
+           <h4>
+            结构优化：
+           </h4>
+           <p>
+            结构优化的目标是改进模型的体系结构或结构，以提高模型效率和性能之间的平衡。包括神经网络架构搜索（NAS）和低秩因式分解（LRF）。
+           </p>
+           <p>
+            <strong>
+             神经网络架构搜索（NAS）：
+            </strong>
+            NAS旨在自动化地搜索最优的神经网络架构，平衡效率和性能。这一过程利用各种策略来识别适合特定任务的最佳模型结构。具体应用实例包括：
+            <strong>
+             AutoTinyBERT、NAS-BERT等。
+            </strong>
+           </p>
+           <p>
+            <strong>
+             低秩因式分解（LRF）
+            </strong>
+            ：LRF通过将大矩阵分解成秩较低的小矩阵乘积来减少模型的计算需求和提升处理速度，尤其是在解码阶段。应用示例包括：
+            <strong>
+             ASVD等
+            </strong>
+           </p>
+           <p>
+            <strong>
+            </strong>
+            结构优化的核心目标是在不牺牲模型性能的前提下，通过改进模型的内部结构和计算流程来显著提高其运行效率。
+           </p>
+           <h4>
+            知识蒸馏：
+           </h4>
+           <p>
+            知识蒸馏主要是将大模型（教师模型）的知识传递到小模型（学生模型）中，以减少模型的规模和计算需求，同时尽量保持模型的性能。知识蒸馏可以分为两种主要方法：白盒蒸馏和黑盒蒸馏。
+           </p>
+           <p>
+            <strong>
+             白盒蒸馏（White-Box KD）
+            </strong>
+           </p>
+           <p>
+            白盒蒸馏允许访问教师模型的内部结构和参数，以此利用教师模型的中间特征（如激活层的输出）和最终输出来训练学生模型。这种方法的关键在于：
+           </p>
+           <ul>
+            <li>
+             <strong>
+              特征蒸馏
+             </strong>
+             ：将教师模型的中间层输出（如特定层的激活值）直接用于指导学生模型的相关层，以此捕获教师模型的丰富特征表达。
+            </li>
+            <li>
+             <strong>
+              输出对齐
+             </strong>
+             ：通过对齐教师和学生模型的最终输出（通常是分类的概率分布），来提高学生模型的性能。这通常通过最小化两个模型输出之间的某种距离度量（如KL散度）来实现。
+            </li>
+           </ul>
+           <p>
+            <strong>
+             黑盒蒸馏（Black-Box KD）
+            </strong>
+           </p>
+           <p>
+            黑盒蒸馏不需要对教师模型的内部结构或参数有任何访问权限，只需要教师模型的输出。这种方式特别适合于教师模型为商业机密或由第三方提供的情况。主要方法包括：
+           </p>
+           <ul>
+            <li>
+             <strong>
+              输出蒸馏
+             </strong>
+             ：直接使用教师模型的输出（例如标签或概率分布）来训练学生模型，使学生模型学习模仿教师模型的决策边界。
+            </li>
+            <li>
+             <strong>
+              多任务学习
+             </strong>
+             ：利用教师模型在特定任务上的强大能力，通过教师模型生成的数据来训练学生模型处理多种任务。
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="169" src="https://i-blog.csdnimg.cn/blog_migrate/b7f166b12dfe92b9709d14a52cc28707.png" width="460"/>
+           </p>
+           <h4>
+            动态推理：
+           </h4>
+           <p>
+            动态推理允许大型语言模型（LLM）在不同的模型层上根据特定的样本或token提前终止推理过程。这些技术主要分为两类：样本级早期退出和token级早期退出。
+           </p>
+           <p>
+            <strong>
+             样本级早期退出
+            </strong>
+           </p>
+           <p>
+            样本级早期退出技术专注于在个别样本的处理中识别和利用最优的模型结构和尺寸。
+            <strong>
+             常见的方法是在语言模型后附加额外的模块，这些模块在确定退出推理的最佳层级时起决定性作用。
+            </strong>
+            例如，FastBERT 和 DeeBERT 通过在特定层后附加额外的判断模块，根据模块输出确定是否继续或停止推理。这种方法可以减少不必要的计算，特别是当确定某些样本不需要完整的模型深度来做出准确预测时。
+           </p>
+           <p>
+            <strong>
+             token级早期退出
+            </strong>
+           </p>
+           <p>
+            在语言模型的解码阶段，即序列生成阶段，标记级早期退出技术通过评估每个输出标记的退出决策来实现。
+            <strong>
+             这类技术通常包括在每个输出步骤训练一个分类器，用来决定是否在某一层停止推理。
+            </strong>
+           </p>
+           <p>
+            <img alt="" height="270" src="https://i-blog.csdnimg.cn/blog_migrate/8993b429763818e05dcae122a675d73d.png" width="395"/>
+           </p>
+           <h3>
+            （3）未来研究方向
+           </h3>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               非传统结构探索
+              </strong>
+              ：当前研究已开始探索替代传统Transformer的架构，如Mamba、RNVK等，这些架构通过改变计算和内存访问模式来提高效率。这表明在特定的应用场景中，这些非标准架构可能提供更优化的性能和效率。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               模型压缩
+              </strong>
+              ：模型量化仍是主流的压缩方法，特别是通过后训练量化（PTQ）和量化感知训练（QAT）来减少参数数量和内存使用。然而，量化可能会牺牲模型的某些能力，如多步推理和自我校准，因此需要谨慎选择适当的量化策略以减轻性能退化。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               阶段性处理和稀疏化技术
+              </strong>
+              ：针对长输入序列处理，流式处理和稀疏化技术显示出减少计算需求的潜力，但也可能影响到信息的完整性和模型性能。文中提到，如StreamLing和LoSparse等方法在处理大规模文本时能有效减少计算量。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               结构搜索
+              </strong>
+              ：神经架构搜索（NAS）被视为一种潜在的自动化工具，用于发现和优化LLM的最优架构。尽管NAS提供了在保持性能的同时增加计算效率的可能性，但它的计算需求很高，可能限制了其实用性。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               低秩分解
+              </strong>
+              ：低秩因式分解（LRF）技术通过将权重矩阵分解为低秩矩阵来减少必需加载的参数数量，从而加速解码阶段的计算。例如，SVD和TensorGPT就是利用这种技术来实现模型压缩和加速推理的例子。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               知识蒸馏
+              </strong>
+              ：知识蒸馏被认为是一个有前景的方向，可以通过教师模型将知识传递给较小的学生模型，减少模型的复杂性同时保持性能。
+             </p>
+            </li>
+           </ul>
+           <h2>
+            6.系统级优化
+           </h2>
+           <p>
+            考虑到LLM中计算密集型的特性，特别是注意力机制和线性运算，这些操作占据了运行时的大部分时间。因此，系统级优化的主要目标是改进这些特定的特性，以增强模型的整体性能和效率。
+           </p>
+           <ol>
+            <li>
+             <p>
+              <strong>
+               改进解码方法
+              </strong>
+              ：针对LLM的解码方法，提出了特殊的推测解码方法，这些方法旨在优化模型的运算利用率。通过这些优化，可以在不牺牲输出质量的情况下加速模型响应时间。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               在线服务优化
+              </strong>
+              ：在在线服务的上下文中，请求通常来自多个用户，且具有异步性。这要求系统能够有效处理来自不同用户的批处理和调度请求，同时需要优化内存使用和处理异步请求时的调度策略。
+             </p>
+            </li>
+           </ol>
+           <p>
+            系统级优化着重于通过特定的技术和策略来改进模型在实际应用中的表现，尤其是在面对高并发请求时的性能表现。这包括对硬件和软件资源的有效管理，以确保模型能够快速且准确地响应请求，从而在实际部署中达到更高的效率和效果。
+           </p>
+           <h3>
+            （1）推理引擎的优化
+           </h3>
+           <p>
+            推理引擎的优化目的是加速模型在前向传递过程中的计算步骤，这通常涉及对注意力运算和线性运算的优化，因为它们占据了运行时间的大部分。如图所示，注意力运算和线性运算往往是推理时间的主要消耗者。这是因为它们在模型中广泛应用，并且随着输入序列长度的增加，它们的计算复杂度和内存需求也会显著增加。
+           </p>
+           <p>
+            <img alt="" height="200" src="https://i-blog.csdnimg.cn/blog_migrate/1b14bf2b734a3b3bcf2a00745b7b0562.png" width="784"/>
+           </p>
+           <p>
+            推理引擎的优化主要包括图和算子优化和推断解码
+           </p>
+           <p>
+            <img alt="" height="232" src="https://i-blog.csdnimg.cn/blog_migrate/c6251281e9e30ca4ae2efec56b570c68.png" width="792"/>
+           </p>
+           <h4>
+            图与算子优化（Graph and Operator Optimization）
+           </h4>
+           <p>
+            图和算子优化主要针对模型的运算过程进行优化，特别是注意力和线性运算，这两种运算在大型语言模型（LLM）的推理阶段占据了大部分运行时间。这部分的优化旨在提高计算效率，缩短响应时间，并减少资源消耗。
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               注意力算子优化（Attention Operator Optimization）
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               标准的注意力算子计算复杂，特别是在处理长序列时。为了减少计算量，采用了分块注意力算法，例如FlashAttention，它将注意力矩阵Q、K、V分成多块，每块独立处理，这样做可以减少每个块所需的内存和计算资源。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               线性运算优化（Linear Operator Optimization）
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               线性运算如矩阵乘法（GEMM）在传统LLM中是核心计算任务。针对解码阶段的特定需求，发展了特定的GEMM实现，如FlashDecoding++，通过算法优化和硬件特性使用，显著提高了这一阶段的计算效率。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h4>
+            推测性解码
+           </h4>
+           <p>
+            推测性解码是一个针对自回归语言模型的推理过程优化的方法，它通过一个草稿和验证的两步策略来提高解码效率。这种方法的核心思想是在不牺牲输出质量的前提下，提高计算的并行性和速度。主要包含2个阶段：
+           </p>
+           <p>
+            <strong>
+             草稿构建（Draft Construction）
+            </strong>
+            在这一步骤中，使用一个较小的模型（通常称为草稿模型）来并行生成一系列预测token，这些令牌被称为“草稿token”。这个过程可以利用现代计算架构的并行计算能力，快速生成大量候选token。
+           </p>
+           <ul>
+            <li>
+             <strong>
+              贪婪采样（Greedy Sampling）
+             </strong>
+             和
+             <strong>
+              核心采样（Nucleus Sampling）
+             </strong>
+             ：这些采样技术被用于选择概率最高的令牌，优化初步令牌的选择过程。贪婪采样直接选择概率最高的令牌，而核心采样则从累积概率超过某个阈值的令牌集合中随机选择，以增加多样性。
+            </li>
+           </ul>
+           <p>
+            <strong>
+             草稿验证（Draft Verification）
+            </strong>
+            ：在这一步骤中，主模型（通常是一个更大或更精确的模型）计算草稿token的条件概率，以确定这些令牌是否应该被接受。这一步骤决定了每个草稿令牌是否符合生成目标，是保证输出质量的关键环节。
+           </p>
+           <p>
+            其接受概率为：
+           </p>
+           <p>
+            <img alt="" height="82" src="https://i-blog.csdnimg.cn/blog_migrate/df6085f373801d45ccd626375b82d5c3.png" width="476"/>
+           </p>
+           <p>
+            p代表LLM的条件概率，q代表草稿模型生成的概率。
+           </p>
+           <p>
+            <img alt="" height="293" src="https://i-blog.csdnimg.cn/blog_migrate/66b0b6afcdb7ebea1eba9e80cb66d475.png" width="449"/>
+           </p>
+           <p>
+            <strong>
+             对比分析：
+            </strong>
+           </p>
+           <ul>
+            <li>
+             <strong>
+              性能提升
+             </strong>
+             ：推测性解码可以显著提高解码速度，实现更高的计算效率。
+            </li>
+            <li>
+             <strong>
+              输出质量维持
+             </strong>
+             ：通过精心设计的草稿构建和验证步骤，推测性解码方法能够在提高速度的同时，保持与传统自回归方法相当的输出质量。
+            </li>
+            <li>
+             <strong>
+              适用性和挑战
+             </strong>
+             ：这种方法特别适合于需要快速生成响应的场景，如实时对话系统。然而，草稿模型的设计和训练需要精心优化，以确保其预测的准确性和覆盖范围。
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="311" src="https://i-blog.csdnimg.cn/blog_migrate/8eba629901705f35d5761e297a0dfd8e.png" width="1124"/>
+           </p>
+           <h3>
+            （2）服务系统的优化
+           </h3>
+           <p>
+            对服务系统的优化能够提高处理异步请求的效率。主要包括内存管理、连续批处理、调度策略，以及分布式系统的优化。
+           </p>
+           <p>
+            <img alt="" height="206" src="https://i-blog.csdnimg.cn/blog_migrate/6edf8a74b9f92e4acaade20d940501c0.png" width="568"/>
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               内存管理
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               <strong>
+                KV缓存管理
+               </strong>
+               ：在大型语言模型服务中，KV缓存占据了大量的内存空间。传统方法中，为每个请求预分配固定的KV缓存空间，常因实际使用长度小于预分配长度而造成资源浪费。
+              </li>
+              <li>
+               <strong>
+                动态预测与分块策略
+               </strong>
+               ：通过预测每个请求的实际需要长度，动态分配KV缓存空间，减少浪费。此外，采用块状管理策略，将生成的KV按块存储，优化了内存的利用效率，减少了碎片化。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               连续批处理
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               <strong>
+                分裂-融合技术
+               </strong>
+               ：这一策略首先将长请求中的预填充过程分裂成多个较小的块，然后将这些小块与多个短请求在解码阶段进行批量处理。这种方法能够有效减少尾部延迟，平衡各个批次的工作负载。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               调度策略
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               <strong>
+                优先级和公平性调度
+               </strong>
+               ：通过预测性调度策略，如FastServe，优先处理预计完成时间短的请求，以优化整体的作业完成时间（JCT）和系统公平性。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               分布式系统
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               <strong>
+                分布式计算资源优化
+               </strong>
+               ：通过在分布式平台上分散预填充和解码步骤的负载，如TerraInfer和DistServe等方法，提高了系统的吞吐量和可扩展性。此类策略能够更好地利用分布式环境的计算资源，减轻单个节点的负担。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h3>
+            （3）硬件加速器设计
+           </h3>
+           <p>
+            通过针对FPGA的特定优化能够增强处理器在执行大型语言模型时的性能。
+           </p>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               FACT
+              </strong>
+              ：核心思想是通过混合精度量化的方式来优化注意力机制，使其在FPGA上的执行更为高效。重要结论是，与传统的NVIDIA V100 GPU相比，FACT能够实现更高的能效。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               ALLO
+              </strong>
+              ：致力于改善解码阶段的内存管理，减少内存使用中的冗余和无效率，从而提高了能效和解码速度。这说明了在内存密集的计算阶段，适当的硬件优化可以显著提升性能。
+             </p>
+            </li>
+            <li>
+             <p>
+              <strong>
+               FlightLLM
+              </strong>
+              ：通过在芯片上直接处理稀疏模式，使用数字信号处理器链优化处理，支持混合精度操作，从而达到高内存效率和能效。这表明针对特定的计算模式进行硬件级定制可以极大提高效率和速度。
+             </p>
+            </li>
+           </ul>
+           <h3>
+            （4）LLM框架比较
+           </h3>
+           <ul>
+            <li>
+             <strong>
+              DeepSpeed
+             </strong>
+             和
+             <strong>
+              TensorRT-LLM
+             </strong>
+             通过精细的操作优化和系统调度策略，在处理异步请求时，能够显著提高系统的吞吐量和效率。这显示了在大规模部署LLM时，优化底层计算和数据传输机制是关键。
+            </li>
+           </ul>
+           <p>
+            <img alt="" height="247" src="https://i-blog.csdnimg.cn/blog_migrate/3d1ba5eb9e5cd491a7112aeeed8ab723.png" width="962"/>
+           </p>
+           <p>
+            系统级优化（如
+            <strong>
+             RadixAttention
+            </strong>
+            ）是提升LLM服务效率的关键，特别是在面对大规模实时处理需求时。未来的发展方向可能包括更多针对特定应用的算法优化和硬件协同设计，以进一步提高性能和降低成本。
+           </p>
+           <h2>
+            7.未来研究方向的启示与建议
+           </h2>
+           <ul>
+            <li>
+             <p>
+              <strong>
+               多模型框架
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               建议通过集成多个模型来利用LLMs的计算能力，处理复杂的任务和请求。这需要在系统架构中引入更多的并行处理机制和优化，以充分发挥并行计算的优势。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               长上下文LLMs
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               对于处理长上下文的能力，提出需要开发更有效的计算方法和架构，特别是改进自注意力机制的计算效率，以处理越来越大的上下文长度，这是未来研究的一个重要方向。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               边缘部署
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               在边缘设备上部署LLMs需要考虑模型的能效和响应速度。建议研究和开发新的模型压缩技术和硬件协同优化方法，使得LLMs可以在资源受限的边缘设备上高效运行。
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              <strong>
+               安全性和效率的权衡
+              </strong>
+              ：
+             </p>
+             <ul>
+              <li>
+               强调在追求效率优化的同时，不应忽视模型的安全性。建议开发新的优化技术，同时考虑到安全性，以实现效率和安全性的更好平衡。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+           </p>
+           <p>
+           </p>
+           <p>
+           </p>
+           <p>
+           </p>
+           <p>
+           </p>
+          </div>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <!-- 富文本柱状图  -->
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/chart/chart.css" rel="stylesheet">
+  <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+ </link>
+</html>

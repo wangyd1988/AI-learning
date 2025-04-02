@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/u012374012/article/details/143856556" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      大模型（LLMs）推理面_大模型推理速度-CSDN博客
+     </title>
+     <meta content="大模型推理速度" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"大模型推理"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读1.1k次，点赞8次，收藏23次。1. 首先，序列太长了，有很多Q/K/V；2. 其次，因为是逐个预测next token，每次要缓存K/V加速解码。_大模型推理速度" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-af0ead44cd.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin3-template/skin3-template-762f7595fd.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            大模型（LLMs）推理面
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="up-time">
+            最新推荐文章于 2025-03-25 11:25:15 发布
+           </div>
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/u012374012" rel="noopener" target="_blank" title="cv2016_DL">
+              cv2016_DL
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCurrentTime2.png"/>
+             <span class="time blog-postTime" data-time="2024-11-18 15:18:51">
+              最新推荐文章于 2025-03-25 11:25:15 发布
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量1.1k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                23
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            8
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              分类专栏：
+             </span>
+             <a class="tag-link" href="https://blog.csdn.net/u012374012/category_12824576.html" rel="noopener" target="_blank">
+              LLM大模型
+             </a>
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"langchain","ab":"new","extra":"{\"searchword\":\"langchain\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"langchain","ab":"new","extra":"{\"searchword\":\"langchain\"}"}' href="https://so.csdn.net/so/search/s.do?q=langchain&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              langchain
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"transformer","ab":"new","extra":"{\"searchword\":\"transformer\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"transformer","ab":"new","extra":"{\"searchword\":\"transformer\"}"}' href="https://so.csdn.net/so/search/s.do?q=transformer&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              transformer
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"chatgpt","ab":"new","extra":"{\"searchword\":\"chatgpt\"}"}' href="https://so.csdn.net/so/search/s.do?q=chatgpt&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              chatgpt
+             </a>
+            </div>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/u012374012/article/details/143856556" target="_blank">
+               https://blog.csdn.net/u012374012/article/details/143856556
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="htmledit_views" id="content_views">
+           <h2>
+            1. 为什么大模型推理时显存涨的那么多还一直占着？
+           </h2>
+           <p>
+            1. 首先，序列太长了，有很多Q/K/V；
+           </p>
+           <p>
+            2. 其次，因为是逐个预测next token，每次要缓存K/V加速解码。
+           </p>
+           <p>
+           </p>
+           <h2>
+            2. 大模型在gpu和cpu上推理速度如何？
+           </h2>
+           <p>
+            7B量级下：
+           </p>
+           <p>
+            • cpu推理速度约10token/s；
+           </p>
+           <p>
+            • 单卡A6000和8核AMD的推理速度通常为 10:1。
+           </p>
+           <p>
+           </p>
+           <h2>
+            3. 推理速度上，int8和fp16比起来怎么样？
+           </h2>
+           <p>
+            根据实践经验，int8模式一般推理会明显变慢（huggingface的实现）
+           </p>
+           <p>
+           </p>
+           <h2>
+            4. 大模型有推理能力吗？
+           </h2>
+           <p>
+            大模型有推理能力。有下面2个方面的体现：
+           </p>
+           <p>
+            ChatGPT拥有in-context correction的能力，即如果说错了，给出矫正，ChatGPT能“听懂”错在哪儿了，并向正确 的方向修正。in-context correction要比in-context learning难了太多，描述越详细清楚，ChatGPT回答得越好。 要知道，越详细的描述，在预训练的文本里越难匹配到的。
+           </p>
+           <p>
+            在询问ChatGPT互联网上并不存在内容的时候，能给出较好答案（如用ChatGPT学建模）；ChatGPT能通过信 息猜你心中的想法；你可以制定一个全新的游戏规则让ChatGPT和你玩，ChatGPT可以理解。
+           </p>
+           <h2>
+            5. 大模型生成时的参数怎么设置？
+           </h2>
+           <p>
+            生成模型预测调参建议：
+           </p>
+           <p>
+            建议去调整下 top_p, num_beams, repetition_renalty, temperature, do_sample=True;
+           </p>
+           <p>
+            数据生成有重复，调高repetition_renalty；
+           </p>
+           <p>
+            生成任务表达单一的，样本也不多的，可适当调低 temperature，生成的样子跟训练集的比较像；如果要复现训 练集的效果，temperature=0.01即可。
+           </p>
+           <p>
+            以上是经验参数，具体调参根据任务而定，不是固定的
+           </p>
+           <p>
+            • 参数解释：
+           </p>
+           <pre><code class="language-bash">top_p=0.9,
+#Moderately increase the probability threshold of nucleus sampling to increase the
+quantity of candidate tokens and increase generation diversity.
+temperature=1.0,
+#The previous low temperature parameter could lead to a severe polarization in the
+probability distribution of generated words, which degenerates the generation
+strategy into greedy decoding.
+do_sample=True,
+#do_sample parameter is set to False by default. After setting to True, the
+generation methods turn into beam-search multinomial sampling decoding strategy.
+no_repeat_ngram_size=6,
+#Configure the probability of the next repeating n-gram to 0, to ensure that there
+are no n-grams appearing twice. This setting is an empirical preliminary
+exploration.
+repetition_penalty=1.8,
+#For words that have appeared before, in the subsequent prediction process, we
+reduce the probability of their reoccurrence by introducing the repetition_penalty
+parameter. This setting is an empirical preliminary exploration.
+</code></pre>
+           <h2>
+            6. 有哪些省内存的大语言模型训练/微调/推理方法？
+           </h2>
+           <p>
+            • 动机：大模型（LLMs）现在是 NLP 领域的最主流方法之一，但是大模型的训练/微调/推理需要的内存也越来越多。
+           </p>
+           <p>
+            举例来说，即使 RTX 3090 有着 24GB 的 RAM，是除了 A100 之外显存最大的显卡。但使用一块 RTX 3090 依 然无法 fp32 精度训练最小号的 LLaMA-6B。
+           </p>
+           <p>
+            • Memory-Efficient 的 LLMs 的训练/微调/推理方法
+           </p>
+           <p>
+            • fp16
+           </p>
+           <p>
+            • int8
+           </p>
+           <p>
+            • LoRA
+           </p>
+           <p>
+            • Gradient checkpointing
+           </p>
+           <p>
+            • Torch FSDP
+           </p>
+           <p>
+            • CPU offloading
+           </p>
+           <h3>
+            6.1 如何 估算模型所需的RAM？
+           </h3>
+           <p>
+            首先，我们需要了解如何根据参数量估计模型大致所需的 RAM，这在实践中有很重要的参考意义。我们需要通 过估算设置 batch_size，设置模型精度，选择微调方法和参数分布方法等。 接下来，我们用LLaMA-6B 模型为例估算其大致需要的内存。
+           </p>
+           <p>
+            首先考虑精度对所需内存的影响：
+           </p>
+           <p>
+            • fp32 精度，一个参数需要 32 bits, 4 bytes.
+           </p>
+           <p>
+            • fp16 精度，一个参数需要 16 bits, 2 bytes.
+           </p>
+           <p>
+            • int8 精度，一个参数需要 8 bits, 1 byte.
+           </p>
+           <p>
+            其次，考虑模型需要的 RAM 大致分三个部分：
+           </p>
+           <p>
+            • 模型参数
+           </p>
+           <p>
+            • 梯度
+           </p>
+           <p>
+            • 优化器参数
+           </p>
+           <p>
+            • 模型参数：等于参数量*每个参数所需内存。
+           </p>
+           <p>
+            • 对于 fp32，LLaMA-6B 需要 6B*4 bytes = 24GB内存
+           </p>
+           <p>
+            • 对于 int8，LLaMA-6B 需要 6B*1 byte = 6GB
+           </p>
+           <p>
+            • 梯度：同上，等于参数量*每个梯度参数所需内存。
+           </p>
+           <p>
+            • 优化器参数：不同的优化器所储存的参数量不同。
+           </p>
+           <p>
+            对于常用的 AdamW 来说，需要储存两倍的模型参数（用来储存一阶和二阶momentum）。
+           </p>
+           <p>
+            • fp32 的 LLaMA-6B，AdamW 需要 6B*8 bytes = 48 GB
+           </p>
+           <p>
+            • int8 的 LLaMA-6B，AdamW 需要 6B*2 bytes = 12 GB
+           </p>
+           <p>
+            除此之外，CUDA kernel 也会占据一些 RAM，大概 1.3GB 左右，查看方式如下。
+           </p>
+           <p>
+            &gt; torch.ones((1，1)).to("cuda")
+           </p>
+           <p>
+            &gt; print_gpu_utilization()
+           </p>
+           <p>
+            &gt;&gt;&gt;
+           </p>
+           <p>
+            GPU memory occupied: 1343 MB
+           </p>
+           <p>
+            综上，int8 精度的 LLaMA-6B 模型部分大致需要 6GB+6GB+12GB+1.3GB = 25.3GB 左右。         再根据LLaMA的架构（hidden_size = 4096, intermediate_size =11008, num_hidden_layers = 32, context_length = 2048）计算中间变量内存。
+           </p>
+           <p>
+            每个 instance 需要：
+           </p>
+           <p>
+            (4096 +11008)* 2048 *32 * 1byte = 990MB
+           </p>
+           <p>
+            所以一张 A100（80GB RAM）大概可以在 int8 精度；batch_size = 50 的设定下进行全参数训练。
+           </p>
+           <p>
+            查看消费级显卡的内存和算力： 2023 GPU Benchmark and Graphics Card Comparison Chart：https://www.gpucheck.com/gpu-benchmarkgraphics-card-comparison-chart
+           </p>
+           <h3>
+            6.2 Fp16-mixed precision
+           </h3>
+           <p>
+            <img alt="" height="280" src="https://i-blog.csdnimg.cn/direct/ecf1519226be4f019a825bb9612a3ed6.png" width="817"/>
+           </p>
+           <p>
+            混合精度训练的大致思路是在 forward pass 和 gradient computation 的时候使用 fp16 来加速，但是在更新参数 时使用 fp32。
+           </p>
+           <p>
+            用 torch 实现： CUDA Automatic Mixed Precision         examples：        https://pytorch.org/docs/stable/notes/amp_examples.html
+           </p>
+           <p>
+            torch fp16 推理：直接使用 model.half() 将模型转换为fp16.
+           </p>
+           <p>
+            model.eval()
+           </p>
+           <p>
+            model.half()
+           </p>
+           <p>
+            使用 Huggingface Transformers：在 TrainingArguments 里声明         fp16=Truehttps://huggingface.co/docs/transformers/perf_train_gpu_one#fp16-training
+           </p>
+           <h3>
+            6.3 Int8-bitsandbytes
+           </h3>
+           <p>
+            Int8 是个很极端的数据类型，它最多只能表示 - 128～127 的数字，并且完全没有精度。
+           </p>
+           <p>
+            为了在训练和 inference 中使用这个数据类型，bitsandbytes 使用了两个方法最大程度地降低了其带来的误差：
+           </p>
+           <p>
+            1. vector-wise quantization
+           </p>
+           <p>
+            2. mixed precision decompasition
+           </p>
+           <p>
+            Huggingface 在这篇文章中用动图解释了 quantization 的实现：https://huggingface.co/blog/hf-bitsandbytesintegration
+           </p>
+           <p>
+            论文： LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale：https://arxiv.org/abs/2208.07339
+           </p>
+           <p>
+            借助 Huggingface PEFT，使用 int8 训练 opt-6.5B 的完整流程： https://github.com/huggingface/peft/blob/main/examples/int8_training/Finetune_opt_bnb_peft.ipynb
+           </p>
+           <h3>
+            6.4 LoRA
+           </h3>
+           <p>
+            Low-Rank Adaptation 是微调 LLMs 最常用的省内存方法之一。
+           </p>
+           <p>
+            <img alt="" height="432" src="https://i-blog.csdnimg.cn/direct/9a03197edd82496a9cff65e0efa9e114.png" width="480"/>
+           </p>
+           <p>
+            LoRA 发现再微调 LLMs 时，更新矩阵（update matrix）往往特别 sparse，也就是说 update matrix 是低秩矩 阵。LoRA 的作者根据这一特点将 update matrix reparametrize 为两个低秩矩阵的积积 。
+           </p>
+           <p>
+            其中，，A 和 B 的秩为 r，且 。
+           </p>
+           <p>
+            如此一来，A+B 的参数量将大大小于 .
+           </p>
+           <p>
+            LoRA 的论文：https://arxiv.org/pdf/2106.09685.pdf 借助 Huggingface PEFT 框架，使用 LoRA 微调 mt0： https://github.com/huggingface/peft/blob/main/examples/conditional_generation/peft_lora_seq2seq.ipynb
+           </p>
+           <p>
+           </p>
+           <h2>
+            6.5 Gradient Checkpointing
+           </h2>
+           <p>
+            在 torch 中使用 - 把 model 用一个 customize 的 function 包装一下即可，详见：
+           </p>
+           <p>
+            Explore Gradient-Checkpointing in PyTorch：https://qywu.github.io/2019/05/22/explore-gradientcheckpointing.html
+           </p>
+           <p>
+            在 Huggingface Transformers 中使用： https://huggingface.co/docs/transformers/v4.27.2/en/perf_train_gpu_one#gradient-checkpointing
+           </p>
+           <h3>
+            6.6 Torch FSDP+CPU
+           </h3>
+           <p>
+            offload Fully Sharded Data Paralle（FSDP）和 DeepSpeed 类似，均通过 ZeRO 等分布优化算法，减少内存的占用 量。其将模型参数，梯度和优化器状态分布至多个 GPU 上，而非像 DDP 一样，在每个 GPU 上保留完整副本。 CPU offload 则允许在一个 back propagation 中，将参数动态地从 GPU -&gt; CPU, CPU -&gt; GPU 进行转移，从而 节省 GPU 内存。
+           </p>
+           <p>
+            Huggingface 这篇博文解释了 ZeRO 的大致实现方法：https://huggingface.co/blog/zero-deepspeed-fairscale
+           </p>
+           <p>
+            借助 torch 实现 FSDP，只需要将 model 用 FSDPwarp 一下；
+           </p>
+           <p>
+            同样，cpu_offload 也只需要一行代码： https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/
+           </p>
+           <p>
+            在这个可以查看 FSDP 支持的模型：https://pytorch.org/docs/stable/fsdp.html
+           </p>
+           <p>
+            在 Huggingface Transformers 中使用 Torch FSDP： https://huggingface.co/docs/transformers/v4.27.2/en/main_classes/trainer#transformers.Trainin         根据某些 issue，shard_grad_op（只分布保存 optimizer states 和 gradients）模式可能比 fully_shard 更稳定： https://github.com/tatsu-lab/stanford_alpaca/issues/32
+           </p>
+           <h2>
+            7. 如何让大模型输出合规化
+           </h2>
+           <p>
+            根据用户的输入问题内容，大模型进行生成回答的内容，但是生成的回答，不直接对外输出给用户。
+           </p>
+           <p>
+            需要进行合 规的处理，因为大模型的输出内容不可控，对于严肃的场景，以免引起用户的投诉。所以需要进合并处理。
+           </p>
+           <p>
+            目前处理的方法，模型生成内容，再把这些内容生成向量，再查询话术向量库，得到最相似的话术。如果查询结 果或相似得分比较阈值低或者查询不到结果，则走兜底策略。兜底策略按用户所在的对话阶段，实验不同的兜底 话术。或者使用万能兜底话术。
+           </p>
+           <h2>
+            8. 应用模式变更
+           </h2>
+           <p>
+            机器人销售场景的case:
+           </p>
+           <p>
+            纯大模型AI模式，最初直接是大模型机器人直接和用户对话，全流程都是大模型对话走流程。
+           </p>
+           <p>
+            对比之前的AI（小模型意图、话术策略）+人工模式，发现之前的初始阶段通过率高些，初步判断可能是用户说 的太发散，大模型不好收敛。
+           </p>
+           <p>
+            就调整为AI+大模型AI模式。这样前面的AI主要是小模型意图、话术策略模式，任务引导更明确。大模型可以更 好的和有意向的用户进行交互，更容易引导用户成单。
+           </p>
+           <h2>
+            9. 模型输出的分布比较稀疏，怎么处理？
+           </h2>
+           <p>
+            可以采用一些方法来处理模型输出的分布稀疏，例如使用softmax函数的温度参数调节来平滑输出分布，或者引 入正则化技术，如Dropout，以减少模型对特定类别的过度依赖。
+           </p>
+          </div>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <!-- 富文本柱状图  -->
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/chart/chart.css" rel="stylesheet">
+  <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+ </link>
+</html>

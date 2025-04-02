@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/selectnothing/article/details/125915785" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      Intel OpenVINO深度学习部署：模型优化器与推理引擎详解-CSDN博客
+     </title>
+     <meta content="推理引擎和模型的关系" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"大模型推理"}' name="csdn-baidu-search"/>
+     <meta content="模型优化器和推理引擎是深度学习部署工具包的重要组成部分。通过模型优化器可以提高计算效率和减少延迟，而推理引擎的异步执行和智能资源分配可以提高吞吐量和效率。" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-af0ead44cd.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-whitemove/skin-whitemove-2af9149bdc.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            四、模型优化器与推理引擎
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/selectnothing" rel="noopener" target="_blank" title="Aaaaaki">
+              Aaaaaki
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCurrentTime2.png"/>
+             <span class="time">
+              于 2022-07-21 16:47:46 发布
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量1.3k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                2
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"计算机视觉","ab":"new","extra":"{\"searchword\":\"计算机视觉\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"计算机视觉","ab":"new","extra":"{\"searchword\":\"计算机视觉\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              计算机视觉
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"openvino","ab":"new","extra":"{\"searchword\":\"openvino\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"openvino","ab":"new","extra":"{\"searchword\":\"openvino\"}"}' href="https://so.csdn.net/so/search/s.do?q=openvino&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              openvino
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"python","ab":"new","extra":"{\"searchword\":\"python\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"python","ab":"new","extra":"{\"searchword\":\"python\"}"}' href="https://so.csdn.net/so/search/s.do?q=python&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              python
+             </a>
+            </div>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/selectnothing/article/details/125915785" target="_blank">
+               https://blog.csdn.net/selectnothing/article/details/125915785
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-dark" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <h3>
+            <a id="_0">
+            </a>
+            四、模型优化器与推理引擎
+           </h3>
+           <h4>
+            <a id="1_DLDT_2">
+            </a>
+            1 DLDT介绍
+           </h4>
+           <p>
+            ​ DLDT：深度学习部署工具包（Deep Learning Deployment Toolkit）
+           </p>
+           <p>
+            ​ 通过DLDT，模型可被转化为IR文件部署在Intel支持的硬件设备上，在该流程中原始模型经历了模型优化器和推理引擎两级优化，具体流程如下图所示。
+           </p>
+           <p>
+            ​
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/6d5a0650d9cc3d4b97fcaba09eadd180.jpeg#pic_center"/>
+           </p>
+           <h4>
+            <a id="2_Model_Optimizer_11">
+            </a>
+            2 模型优化器（Model Optimizer）
+           </h4>
+           <ol>
+            <li>
+             <p>
+              模型优化器：跨平台的命令行工具，负责将各种深度学习框架的模型转换为IR文件，以便推理引擎对其进行读取、加载与推理。
+             </p>
+            </li>
+            <li>
+             <p>
+              模型优化器的特点
+             </p>
+             <ul>
+              <li>
+               <p>
+                模型优化器的使用与硬件环境无关，其对模型的所有处理均是在不知道最终部署设备的前提下完成的，因此IR文件可在任何受支持的设备上运行。
+               </p>
+              </li>
+              <li>
+               <p>
+                生成的IR文件可在AI应用的推理过程中反复使用，转换成IR文件后，模型的准确度会存在轻微下降，但性能会变得更强
+               </p>
+              </li>
+              <li>
+               <p>
+                在
+                <em>
+                 <strong>
+                  ./OpenVINO/deployment_tools/model_optimizer/extensions/front/
+                 </strong>
+                </em>
+                路径下，可找到模型各层的实际代码，可在此基础上进行自定义，以
+                <em>
+                 LayerNorm
+                </em>
+                层为例，其部分代码如下：
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/7b2461fc8c82b647385761b65cab629a.png#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                若模型中的某层不受支持，可选择创建自定义层。若OpenVINO不支持你的拓扑结构，可使用相应的方法剪贴模型网络，并将其某部分或子图替换为可被支持的结构。
+               </p>
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              模型优化器功能
+             </p>
+             <ul>
+              <li>
+               <p>
+                可将多种深度学习框架的模型转换为IR文件
+               </p>
+              </li>
+              <li>
+               <p>
+                可将模型网络操作映射到支持的库、内核或层
+               </p>
+              </li>
+              <li>
+               <p>
+                可进行预处理操作，如采用
+                <em>
+                 <strong>
+                  –reverse_input_channel
+                 </strong>
+                </em>
+                将输入通道顺序进行转换，从RGB转换为BGR
+               </p>
+              </li>
+              <li>
+               <p>
+                可针对神经网络进行优化，调整神经网络的输入批次大小以及输入尺寸
+               </p>
+              </li>
+              <li>
+               <p>
+                可调整模型数据或权重的格式，如FP32、FP16及INT8，不同设备支持的数据格式不同，具体如下：
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/0532bb907a01ddd259f3a34f557e6ff7.jpeg#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                可剪辑网络模型
+               </p>
+              </li>
+              <li>
+               <p>
+                支持构建自定义层
+               </p>
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              采用模型优化器优化SSD-Mobilenet模型
+             </p>
+             <ul>
+              <li>
+               <p>
+                安装必要组件
+               </p>
+               <p>
+                使用模型优化器的必要步骤是要确保模型已安装必要组件，进入
+                <em>
+                 <strong>
+                  ./model_optimizer/install_prerequisites/
+                 </strong>
+                </em>
+                目录下，运行bat文件，选定框架安装运行脚本，为所有软件套件安装必要组件
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/755713d576a20a7eed832ac3b95f52a6.png#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                通过模型下载器下载模型
+               </p>
+               <p>
+                <code>
+                 python downloader.py --name ssd_mobilenet_v2_coco -o output_dir
+                </code>
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/a633d17a50e24071e0e92cc807d1c197.png#pic_center"/>
+               </p>
+               <p>
+                下载后的模型内容如下：
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/ca9dfe28cbe33d88b66c8afb51ac0071.png#pic_center"/>
+               </p>
+               <ul>
+                <li>
+                 <p>
+                  pd文件为训练结束时所冻结的模型，冻结模型中所有变量均存在固定值，若没有冻结模型，需要对该模型进行冻结
+                 </p>
+                </li>
+                <li>
+                 <p>
+                  pipeline.config文件为网络拓扑的解释文件，需要将其用于模型优化器。为找到模型优化器要使用的参数，需要访问
+                  <em>
+                   <strong>
+                    ./deployment_tools/open_model_zoo/models/public/
+                   </strong>
+                  </em>
+                  下相应模型的文件夹
+                 </p>
+                 <p>
+                  <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/a5b104291abbff901a3cf8a57441a96f.png#pic_center"/>
+                 </p>
+                </li>
+                <li>
+                 <p>
+                  可在
+                  <strong>
+                   yml文件
+                  </strong>
+                  中找到模型优化器所需参数
+                 </p>
+                 <p>
+                  <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/e522c6c0055f26a6509a860d2a008ced.png#pic_center"/>
+                 </p>
+                </li>
+               </ul>
+              </li>
+              <li>
+               <p>
+                按照
+                <strong>
+                 yml文件
+                </strong>
+                说明，运行模型优化器将冻结的
+                <strong>
+                 pb文件
+                </strong>
+                转换为
+                <strong>
+                 IR文件
+                </strong>
+                ，运行下述命令
+               </p>
+               <pre><code>python $mo_dir$\mo.py 
+--input_model $model_path$\frozen_inference_graph.pb 
+--reverse_input_channels 
+--input_shape=[1,300,300,3] 
+--input=image_tensor 
+--transformations_config=$model_optimizer_path$\extensions\front\tf\ssd_v2_support.json 
+--tensorflow_object_detection_api_pipeline_config=$pipeline_path$\pipeline.config 
+--output=detection_classes,detection_scores,detection_boxes,num_detections 
+--model_name ssd-mobilenet
+</code></pre>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/f14813f9df883bec4f877592a16a4d4c.png#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                采用
+                <strong>
+                 IR文件
+                </strong>
+                进行推理，执行检测任务
+               </p>
+               <p>
+                需要注意的是，对于
+                <em>
+                 <strong>
+                  layers
+                 </strong>
+                </em>
+                新版OpenVINO已不再支持，需要注释掉，否则会提示
+                <strong>
+                 openvino.inference_engine.ie_api.IENetwork’ object has no attribute ‘layers’
+                </strong>
+                错误
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/5da65b0827d6ee292da85f047cb9edef.png#pic_center"/>
+               </p>
+               <p>
+                注释掉该部分，即可正常运行
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/a1e359c0827ddc62c7bd06adf7a21f2d.png#pic_center"/>
+               </p>
+               <p>
+                输出图像如下图所示：
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/f3afc33a19bcd0fe6875963a14b7b68a.png#pic_center"/>
+               </p>
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              剪贴网络模型
+             </p>
+             <ul>
+              <li>
+               <p>
+                查找每个
+                <strong>
+                 layer id
+                </strong>
+                所对应层的名称
+               </p>
+               <p>
+                <code>
+                 find "layer id" mobilenetv2-7.xml
+                </code>
+               </p>
+               <p>
+                <code>
+                 grep "layer id" mobilenetv2-7.xml | head -10
+                </code>
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/a8c99e99527322d6435c550a3d37790d.png#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                运行
+                <strong>
+                 mo.py
+                </strong>
+                ,将
+                <strong>
+                 Input
+                </strong>
+                改为指定层的
+                <strong>
+                 name
+                </strong>
+               </p>
+               <pre><code>python mo.py --input_model mobilenetv2-7.onnx 
+--reverse_input_channels 
+--output_dir $output_path$ 
+--input mobilenetv20_features_conv0_fwd 
+--model_name mobilenetv2-7-no-head
+</code></pre>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/ff94f8c9b998d7d4c414e0d15fbfafb8.png#pic_center"/>
+               </p>
+               <p>
+                注：在官方教学中，指定了
+                <em>
+                 <strong>
+                  mean_values
+                 </strong>
+                </em>
+                与
+                <em>
+                 <strong>
+                  scale_values
+                 </strong>
+                </em>
+                的值，但是在个人实验时，剪贴模型后会提示
+                <em>
+                 <strong>
+                  scale_values
+                 </strong>
+                </em>
+                值不匹配，因此未指定其输入值。
+               </p>
+              </li>
+             </ul>
+            </li>
+           </ol>
+           <h4>
+            <a id="3_Inference_Engine_144">
+            </a>
+            3 推理引擎（Inference Engine）
+           </h4>
+           <ol>
+            <li>
+             <p>
+              推理引擎优化
+             </p>
+             <ul>
+              <li>
+               <p>
+                IR模型在生成时并未针对特定的运行设备进行优化，而是在IR文件输入到推理引擎后，由推理引擎针对特定的硬件环境对IR文件进行优化
+               </p>
+              </li>
+              <li>
+               <p>
+                由于各种硬件设备存在不同的指令集与内存等，因此推理引擎采用灵活的插件架构去执行环境配置。插件架构的存在使得可在完全不同的设备上采用几乎相同的代码去执行任务
+               </p>
+              </li>
+              <li>
+               <p>
+                每种插件均有其特定库，以CPU中的
+                <strong>
+                 MKL-DNN
+                </strong>
+                为例，MKL-DNN会针对所有Intel CPU对应的内核、层或函数实施神经网络优化，若该库不支持你的层，可去构建一个自定义层并注册到推理引擎。
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/41053c783c043acd0f624c37d1602a18.jpeg#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                在推理之前，推理引擎将网络映射到正确库单元，并将网络发送到硬件插件，进行多个级别的硬件特定优化。
+               </p>
+               <ul>
+                <li>
+                 网络级优化：一切操作不映射到内核，而是映射它们间的关系，如数据的重组。这样可以提高网络性能，在推理时最大限度的减少数据转化时间
+                </li>
+                <li>
+                 内存级优化：在内存中按特定设备的要求重组数据
+                </li>
+                <li>
+                 内核级优化：推理引擎将选择最适合架构指令集的正确实施方案，若CPU支持
+                 <strong>
+                  AVX512指令集
+                 </strong>
+                 ，其将被用于实施方案
+                </li>
+               </ul>
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              推理引擎API
+             </p>
+             <ul>
+              <li>
+               <p>
+                Intel为所有Intel架构硬件设备提供用于实施推理的一套简单且统一的API，其特殊插件架构支持优化推理性能和内存使用，主要采用C++语言
+               </p>
+              </li>
+              <li>
+               <p>
+                API接口：
+               </p>
+               <ul>
+                <li>
+                 <p>
+                  IECore类：定义了一个推理引擎对象，无需指定特定设备
+                 </p>
+                 <ul>
+                  <li>
+                   read_network()：读入IR文件的函数
+                  </li>
+                  <li>
+                   load_network()：加载网络至指定设备，HETERO插件负责将不支持层的执行回退到其他设备，如
+                   <strong>
+                    HETERO：FPGA，CPU
+                   </strong>
+                   ;MULTI插件则使得可在不同设备上运行每个推理调用，从而完整利用系统中所有设备，并行执行推理，如：
+                   <strong>
+                    device_name = MULTI：MYRIAD，CPU
+                   </strong>
+                  </li>
+                 </ul>
+                </li>
+                <li>
+                 <p>
+                  InferRequest类：用于进行推理任务
+                 </p>
+                </li>
+               </ul>
+              </li>
+             </ul>
+            </li>
+           </ol>
+           <h4>
+            <a id="4__177">
+            </a>
+            4 性能评估
+           </h4>
+           <ol>
+            <li>
+             <p>
+              推理引擎工作流
+             </p>
+             <ul>
+              <li>
+               声明推理引擎对象，读取神经网络，并将网络加载到插件中。按照网络输入与输出的实际尺寸分配blob进行推理
+              </li>
+              <li>
+               需要注意的是，模型的Accuracy并不等于性能，Accuracy只是深度学习的衡量指标，并不等于性能，甚至准确度越高的模型可能参数量越大，性能越容易受影响
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              影响模型性能的因素
+             </p>
+             <ul>
+              <li>
+               吞吐量：神经网络在一秒内可以处理的帧数，单位为“每秒推理数”，用
+               <strong>
+                FPS
+               </strong>
+               表示
+              </li>
+              <li>
+               延迟：从数据开始分析到结果被读取的时间，单位是“毫秒（ms）”
+              </li>
+              <li>
+               效率：单位是“瓦特”或“单位价格的每秒帧数”，基于系统的功耗或价格因素
+              </li>
+             </ul>
+            </li>
+            <li>
+             <p>
+              影响神经网络性能的因素
+             </p>
+             <ul>
+              <li>
+               <p>
+                神经网络的拓扑结构或模型参数量
+               </p>
+              </li>
+              <li>
+               <p>
+                异构设备：CPU、GPU、FPGA、AI加速器（VPU视觉处理单元），例如构建应用，先确定运行神经网络的地方，在Video计算设备上进行推理，在GPU上运行视频处理，在CPU上运行其他任务和逻辑
+               </p>
+              </li>
+              <li>
+               <p>
+                模型精度（数据格式）：Intel指令集架构拥有许多打包数据类型，可在一种打包数据类型上将许多数据打包后一次性对所有数据执行一项操作，即单指令、多数据
+               </p>
+               <ul>
+                <li>
+                 SSE4.2：可打包16个字节的INT8数据，并在一个时钟周期内对所有数据执行同一操作
+                </li>
+                <li>
+                 AVX2：可打包32个字节的INT8数据
+                </li>
+                <li>
+                 AVX512：可打包64个字节的INT8数据
+                </li>
+               </ul>
+               <p>
+                在生成IR文件之后进行校准流程（Calibration），校准流程在不降低准确性的情况下将尽可能多的层的数据转化为整型，其优势是为较小数据类型会占用较小的内存空间，可以减少操作量、加快执行速度。若模型数据格式为整型，则可用VNNI矢量神经网络指令在Intel DL Boost卷积层上实现3倍性能提升。
+               </p>
+               <p>
+                <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/blog_migrate/bcd5ab725aba62a2a950068f212d839b.jpeg#pic_center"/>
+               </p>
+              </li>
+              <li>
+               <p>
+                批处理：增加批处理层次可以提高计算效率，但大批次也会带来延迟增加
+               </p>
+              </li>
+              <li>
+               <p>
+                异步执行：对每一帧进行异步处理可带来吞吐量的巨大提升
+               </p>
+              </li>
+              <li>
+               <p>
+                Throughput模式：通过监控并行数，控制CPU资源的智能分配，并分配至多个推理请求，CPU核心越多，功能的效率越高
+               </p>
+              </li>
+             </ul>
+            </li>
+           </ol>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>

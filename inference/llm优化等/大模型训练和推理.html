@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/weixin_45325331/article/details/136202031" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      大模型训练和推理_nl2cypher-CSDN博客
+     </title>
+     <meta content="nl2cypher" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"大模型推理"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读4.2k次，点赞31次，收藏65次。大模型训练moe是指混合专家（Mixture-of-experts，简称MoE）的，这是一种用于提高大型神经网络性能的技术，它可以将模型的一部分替换为多个专家，每个专家只负责处理一部分输入数据，从而增加模型的参数量和表达能力，同时减少计算量和训练时间。指令可以作为模型的输入的一部分，也可以作为模型的输出的一部分，具体取决于任务的类型。上下文扩展技术的，这是一种用于提高大型语言模型（LLM）对长文本的处理能力的技术，它可以让模型在不增加参数量的情况下，扩展其注意力范围，从而提高模型的语言理解和生成能力。_nl2cypher" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-af0ead44cd.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-thespecialists/skin-thespecialists-085bbd0414.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            大模型训练和推理
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/weixin_45325331" rel="noopener" target="_blank" title="李明朔">
+              李明朔
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newUpTime2.png"/>
+             <span class="time">
+              已于 2024-03-08 07:13:01 修改
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量4.2k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                65
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            31
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              分类专栏：
+             </span>
+             <a class="tag-link" href="https://blog.csdn.net/weixin_45325331/category_12474903.html" rel="noopener" target="_blank">
+              AIGC
+             </a>
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"深度学习","ab":"new","extra":"{\"searchword\":\"深度学习\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              深度学习
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+            </div>
+           </div>
+           <div class="up-time">
+            <span>
+             于 2024-02-27 05:24:00 首次发布
+            </span>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/weixin_45325331/article/details/136202031" target="_blank">
+               https://blog.csdn.net/weixin_45325331/article/details/136202031
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-light" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <p>
+           </p>
+           <div class="toc">
+            <h4>
+             文章目录
+            </h4>
+            <ul>
+             <li>
+              <a href="#NLP_4" rel="nofollow">
+               一、NLP基础
+              </a>
+             </li>
+             <li>
+              <ul>
+               <li>
+                <a href="#1_Tokenizer_5" rel="nofollow">
+                 1. Tokenizer
+                </a>
+               </li>
+               <li>
+                <a href="#2_position_encoding_18" rel="nofollow">
+                 2. position encoding
+                </a>
+               </li>
+               <li>
+                <a href="#3_transformer_29" rel="nofollow">
+                 3. 注意力机制与transformer架构
+                </a>
+               </li>
+              </ul>
+             </li>
+             <li>
+              <a href="#_31" rel="nofollow">
+               二、大模型训练
+              </a>
+             </li>
+             <li>
+              <ul>
+               <li>
+                <a href="#1_SFT_32" rel="nofollow">
+                 1. SFT训练
+                </a>
+               </li>
+               <li>
+                <a href="#2_RLHF_66" rel="nofollow">
+                 2. RLHF训练
+                </a>
+               </li>
+               <li>
+                <a href="#3__80" rel="nofollow">
+                 3. 分布式并行训练技术
+                </a>
+               </li>
+               <li>
+                <ul>
+                 <li>
+                  <a href="#1_82" rel="nofollow">
+                   （1）模型并行
+                  </a>
+                 </li>
+                 <li>
+                  <a href="#2_95" rel="nofollow">
+                   （2）数据并行
+                  </a>
+                 </li>
+                </ul>
+               </li>
+               <li>
+                <a href="#4_MoE_106" rel="nofollow">
+                 4. MoE技术
+                </a>
+               </li>
+               <li>
+                <a href="#4_PEFT_118" rel="nofollow">
+                 4. PEFT训练
+                </a>
+               </li>
+               <li>
+                <a href="#5__129" rel="nofollow">
+                 5. 上下文扩展技术
+                </a>
+               </li>
+              </ul>
+             </li>
+             <li>
+              <a href="#_140" rel="nofollow">
+               三、大模型推理
+              </a>
+             </li>
+             <li>
+              <ul>
+               <li>
+                <a href="#1__141" rel="nofollow">
+                 1. 模型压缩
+                </a>
+               </li>
+               <li>
+                <ul>
+                 <li>
+                  <a href="#1_142" rel="nofollow">
+                   （1）剪枝
+                  </a>
+                 </li>
+                 <li>
+                  <a href="#2_150" rel="nofollow">
+                   （2）量化
+                  </a>
+                 </li>
+                </ul>
+               </li>
+               <li>
+                <a href="#2__172" rel="nofollow">
+                 2. 显存优化技术
+                </a>
+               </li>
+               <li>
+                <a href="#3__189" rel="nofollow">
+                 3. 调度优化技术
+                </a>
+               </li>
+               <li>
+                <a href="#4__199" rel="nofollow">
+                 4. 请求优化技术
+                </a>
+               </li>
+               <li>
+                <a href="#5__214" rel="nofollow">
+                 5. 采样和解码加速
+                </a>
+               </li>
+               <li>
+                <a href="#6__226" rel="nofollow">
+                 6. 模型并行策略
+                </a>
+               </li>
+               <li>
+                <a href="#7_237" rel="nofollow">
+                 7.其他
+                </a>
+               </li>
+              </ul>
+             </li>
+             <li>
+              <a href="#_244" rel="nofollow">
+               四、大模型应用
+              </a>
+             </li>
+             <li>
+              <ul>
+               <li>
+                <a href="#1_RAG_245" rel="nofollow">
+                 1. RAG
+                </a>
+               </li>
+               <li>
+                <ul>
+                 <li>
+                  <a href="#1Langchain_259" rel="nofollow">
+                   （1）Langchain
+                  </a>
+                 </li>
+                 <li>
+                  <a href="#2_268" rel="nofollow">
+                   （2）向量数据库
+                  </a>
+                 </li>
+                 <li>
+                  <a href="#3RAG_276" rel="nofollow">
+                   （3）RAG优化
+                  </a>
+                 </li>
+                </ul>
+               </li>
+               <li>
+                <a href="#2_Agent_290" rel="nofollow">
+                 2. Agent
+                </a>
+               </li>
+               <li>
+                <ul>
+                 <li>
+                  <a href="#_300" rel="nofollow">
+                   对齐微调
+                  </a>
+                 </li>
+                 <li>
+                  <a href="#_314" rel="nofollow">
+                   框架
+                  </a>
+                 </li>
+                </ul>
+               </li>
+               <li>
+                <a href="#3_Prompt_Engineering_322" rel="nofollow">
+                 3. Prompt Engineering
+                </a>
+               </li>
+              </ul>
+             </li>
+             <li>
+              <a href="#_333" rel="nofollow">
+               五、大模型框架
+              </a>
+             </li>
+             <li>
+              <ul>
+               <li>
+                <a href="#1__334" rel="nofollow">
+                 1. 训练框架
+                </a>
+               </li>
+               <li>
+                <a href="#2__344" rel="nofollow">
+                 2. 推理服务框架
+                </a>
+               </li>
+               <li>
+                <a href="#3__353" rel="nofollow">
+                 3. 推理加速框架
+                </a>
+               </li>
+               <li>
+                <a href="#4__371" rel="nofollow">
+                 4. 压缩框架
+                </a>
+               </li>
+               <li>
+                <a href="#5_embedding_379" rel="nofollow">
+                 5. embedding训练框架
+                </a>
+               </li>
+               <li>
+                <a href="#6__388" rel="nofollow">
+                 6. 向量数据库
+                </a>
+               </li>
+               <li>
+                <a href="#7__400" rel="nofollow">
+                 7. 应用框架
+                </a>
+               </li>
+               <li>
+                <a href="#8__416" rel="nofollow">
+                 8. 前端
+                </a>
+               </li>
+              </ul>
+             </li>
+            </ul>
+           </div>
+           <p>
+           </p>
+           <p>
+            来源：
+            <a href="https://www.bilibili.com/video/BV1jj411H7vG/" rel="nofollow">
+             大模型技术栈全览
+            </a>
+           </p>
+           <h2>
+            <a id="NLP_4">
+            </a>
+            一、NLP基础
+           </h2>
+           <h3>
+            <a id="1_Tokenizer_5">
+            </a>
+            1. Tokenizer
+           </h3>
+           <p>
+            Tokenizer是用于将文本切分为更小的单元（token）的方法，常用于自然语言处理（NLP）和机器翻译（MT）等任务中。不同的tokenizer有不同的优缺点和适用场景：
+           </p>
+           <ol>
+            <li>
+             BPE（Byte Pair Encoding）是一种数据压缩方法，也可以用于生成subword词表。它的基本思想是反复合并最高频的相邻字符对，直到达到预设的词表大小或者没有更多的合并可能。BPE可以有效地减少词表的大小，同时保留一定的语义信息。BPE被OpenAI GPT-2和Facebook RoBERTa等模型采用。
+             <br/>
+             ByteBPE是BPE的一种变体，它使用字节而不是字符作为基本单位，这样可以覆盖所有的Unicode字符，而不需要考虑编码的问题。ByteBPE也可以解决一些罕见或未知字符的表示问题，但是它会增加序列的长度，从而增加模型的计算开销。ByteBPE被OpenAI GPT-3等模型采用。
+            </li>
+            <li>
+             WordPiece是另一种生成subword词表的方法，它与BPE类似，但是它选择使得语言模型概率最大的相邻字符对进行合并，而不是最高频的。WordPiece可以更好地考虑语言模型的效果，同时也可以减少词表的大小。WordPiece被Google BERT等模型采用。
+            </li>
+            <li>
+             UniLM（Unigram Language Model）是一种基于统计的分词方法，它可以输出带概率的多个子词分段。它的假设是所有的subword的出现都是独立的，而且subword序列由subword出现概率的乘积产生。UniLM的优点是可以生成多种可能的分词结果，从而提高模型的鲁棒性和泛化能力。UniLM被Bloomberg GPT等模型采用。
+            </li>
+            <li>
+             SentencePiece是一种统一的分词框架，它可以支持多种分词算法，如BPE，Unigram等，也可以支持多种语言和编码。SentencePiece的优点是可以直接从原始文本中学习分词规则，而不需要预先进行分词或标准化，从而简化了分词的流程。SentencePiece被Google ALBERT等模型采用。
+            </li>
+           </ol>
+           <p>
+            参考：
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/649030161" rel="nofollow">
+             NLP 中的Tokenizer：BPE、BBPE、WordPiece、UniLM 理论
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/620508648" rel="nofollow">
+             大模型中的分词器tokenizer：BPE、WordPiece、Unigram LM、SentencePiece
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/445686202" rel="nofollow">
+             理解tokenizer之WordPiece: Subword-based tokenization algorithm
+            </a>
+           </p>
+           <h3>
+            <a id="2_position_encoding_18">
+            </a>
+            2. position encoding
+           </h3>
+           <p>
+            position encoding方是用于给Transformer模型添加位置信息的方法。不同的position encoding方案有不同的优缺点和适用场景，以下是两种方法：
+           </p>
+           <ol>
+            <li>
+             Alibi（Adaptive Learnable Interpretable Bias）是一种相对位置编码方案，它通过在自注意力机制中添加可学习的偏置项，来表示不同位置之间的相对关系。Alibi的优点是可以动态地适应不同的任务和数据，同时也可以外推到比训练时更长的序列长度。Alibi被Google T5等模型采用。
+            </li>
+            <li>
+             RoPE（Rotary Position Embedding）是一种绝对位置编码方案，它通过将位置信息编码为复数，然后与输入向量进行旋转，来表示每个位置的绝对值。RoPE的优点是可以直接地表示位置信息，同时也可以保留输入向量的原始信息。RoPE被EleutherAI GPT-Neo等模型采用。
+            </li>
+           </ol>
+           <p>
+            <a href="https://mp.weixin.qq.com/s/h6Ug2ttJSN5W2qmAC8Id5A" rel="nofollow">
+             综述：利用位置编码实现长度外推
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/650469278" rel="nofollow">
+             大模型基础｜位置编码｜RoPE｜ALiBi
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/657161287" rel="nofollow">
+             ALiBi位置编码深度解析：代码实现、长度外推
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/651588659" rel="nofollow">
+             混合精度下位置编码竟有大坑，LLaMA等主流开源模型纷纷中招
+            </a>
+           </p>
+           <h3>
+            <a id="3_transformer_29">
+            </a>
+            3. 注意力机制与transformer架构
+           </h3>
+           <p>
+            注意力机制是一种能够有效地捕捕获序列内的长距离依赖的神经网络技术，它可以用于处理各种序列数据，如自然语言、音频、视频等。Transformer 是 Google Brain 团队于 2017 年在论文《Attention Is All You Need》中提出的一种新的神经网络架构，它完全基于自注意力机制来处理序列数据，摒弃了之前常用的循环网络结构。Transformer 主要包括编码器（Encoder）和解码器（Decoder）两部分，每部分由多个相同的层堆叠而成。每一层都包含一个自注意力子层和一个前馈神经网络子层。Transformer 在机器器翻译、文本生成、对话系统等领域取得了显显著的性能提升。
+           </p>
+           <h2>
+            <a id="_31">
+            </a>
+            二、大模型训练
+           </h2>
+           <h3>
+            <a id="1_SFT_32">
+            </a>
+            1. SFT训练
+           </h3>
+           <p>
+            SFT是Supervised Fine Tuning的缩写，它是一种用于自然语言处理的技术，它通过对预训练的语言模型进行微调，使其适应特定任务。在大模型SFT中，使用的是大型的预训练语言模型，例如LLAMA、GPT等，这些模型具有数十亿甚至数百亿个参数，可以处理大量的文本数据。
+           </p>
+           <p>
+            SFT的基本思想是利用指令（instruction）来引导模型生成特定任务所需的输出。指令是一种简短的文本，用于描述任务的目标和要求，例如“翻译以下句子”、“写一首诗”等。指令可以作为模型的输入的一部分，也可以作为模型的输出的一部分，具体取决于任务的类型。SFT的优点是可以动态地适应多种不同的任务，而不需要为每个任务单独设计模型或损失函数。
+           </p>
+           <p>
+            SFT的训练过程如下：
+           </p>
+           <ol>
+            <li>
+             首先，需要准备一个包含多种任务指令和对应输出的数据集，这个数据集可以从网上开源的数据集中获取，也可以自己构建。
+            </li>
+            <li>
+             然后，需要加载一个预训练好的语言模型，例如LLAMA、GPT等，这个模型可以从网上下载，也可以自己训练。
+            </li>
+            <li>
+             接着，需要创建一个sfttrainer的实例，传入模型、数据集、指令和输出的字段名、最大序列长度等参数，也可以传入自定义的数据整理函数、数据整合器、训练参数等。
+            </li>
+            <li>
+             最后，需要调用sfttrainer的train方法，开始对模型进行指令微调，训练过程中可以查看训练日志、评估结果、生成样例等。
+            </li>
+           </ol>
+           <p>
+            以下是一个简单的sfttrainer的例子，它使用了huggingface的数据集库中的imdb数据集，对facebook的opt-350m模型进行了指令微调，使其可以根据指令生成影评的摘要或情感分析的结果：
+           </p>
+           <pre><code class="prism language-python"><span class="token keyword">from</span> datasets <span class="token keyword">import</span> load_dataset
+<span class="token keyword">from</span> trl <span class="token keyword">import</span> SFTTrainer
+
+dataset <span class="token operator">=</span> load_dataset<span class="token punctuation">(</span><span class="token string">"imdb"</span><span class="token punctuation">,</span> split<span class="token operator">=</span><span class="token string">"train"</span><span class="token punctuation">)</span>
+
+trainer <span class="token operator">=</span> SFTTrainer<span class="token punctuation">(</span>
+    <span class="token string">"facebook/opt-350m"</span><span class="token punctuation">,</span>
+    train_dataset<span class="token operator">=</span>dataset<span class="token punctuation">,</span>
+    dataset_text_field<span class="token operator">=</span><span class="token string">"text"</span><span class="token punctuation">,</span>
+    max_seq_length<span class="token operator">=</span><span class="token number">512</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+trainer<span class="token punctuation">.</span>train<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/650720185" rel="nofollow">
+             大模型基础｜预训练｜有监督微调SFT
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/675199814" rel="nofollow">
+             实践篇3:大模型有监督微调SFT(Supervised Finetuning)
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/630444940" rel="nofollow">
+             GPT系列模型(1-4)调研 &amp; 对SFT/RLHF的思考
+            </a>
+            <br/>
+            <a href="https://blog.csdn.net/lovely_yoshino/article/details/131394309">
+             大模型之Bloom&amp;LLAMA----SFT(模型微调)
+            </a>
+            <br/>
+            <a href="https://huggingface.co/docs/trl/main/en/sft_trainer" rel="nofollow">
+             Supervised Fine-tuning Trainer
+            </a>
+           </p>
+           <h3>
+            <a id="2_RLHF_66">
+            </a>
+            2. RLHF训练
+           </h3>
+           <p>
+            RLHF是Reinforcement Learning from Human Feedback的缩写，它是一种用于对预训练的生成式语言模型进行指令微调的技术，它可以让模型根据不同的指令生成不同的内容，例如翻译、写诗、编程等。RLHF的优点是可以直接地优化人类反馈作为奖励的语言模型，使其与人类的偏好和价值观对齐。
+           </p>
+           <p>
+            RLHF的训练过程可以分为三个步骤：
+           </p>
+           <ol>
+            <li>
+             预训练一个语言模型：这一步使用经典的预训练目标，如自回归或自编码，训练一个大型的语言模型，例如GPT-3、Llama2等，这个模型可以从网上下载，也可以自己训练。这一步可以使用额外的文本或条件对语言模型进行微调，以适应特定的任务或领域。
+            </li>
+            <li>
+             训练一个奖励模型：这一步使用人工标注的数据，训练一个小型的语言模型，用于评估语言模型的生成结果的质量。这个模型的输入是prompt+answer的形式，输出是一个标量的奖励值，表示人类对这个回答的满意程度。这个模型可以从头开始训练，也可以基于预训练的语言模型进行微调。
+            </li>
+            <li>
+             用强化学习微调语言模型：这一步使用强化学习的方法，如PPO，对预训练的语言模型进行微调，使其最大化奖励模型的输出。这一步需要同时使用语言模型、奖励模型和一个基准模型，基准模型是语言模型的一个副本，用于约束语言模型的输出不要偏离初始的分布太多，以保证生成的文本的合理性和连贯性。
+            </li>
+           </ol>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/624589622" rel="nofollow">
+             详解大模型RLHF过程（配代码解读）
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/599016986" rel="nofollow">
+             ChatGPT 背后的“功臣”——RLHF 技术详解
+            </a>
+            <br/>
+            <a href="https://blog.csdn.net/chaishen10000/article/details/131232948">
+             大模型入门（六）—— RLHF微调大模型
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/641045324" rel="nofollow">
+             OpenAI独家绝技RLHF也被开源超越啦？！DPO让小白轻松玩转RLHF！[已开源]
+            </a>
+           </p>
+           <h3>
+            <a id="3__80">
+            </a>
+            3. 分布式并行训练技术
+           </h3>
+           <p>
+            大模型分布式并行训练技术是一种用于加速大型深度学习模型训练的技术，它可以将模型和数据分布在多个计算设备上，同时进行训练，从而提高训练效率和扩展性。大模型分布式并行训练技术主要有两种类型：模型并行和数据并行。
+           </p>
+           <h4>
+            <a id="1_82">
+            </a>
+            （1）模型并行
+           </h4>
+           <p>
+            模型并行是指将模型的参数或计算图划分为多个部分，分配到不同的设备上，每个设备只负责一部分模型的运算，然后通过通信协调各个部分的结果。模型并行可以处理超大规模的模型，但是也会增加通信的开销和复杂度。模型并行的方法有：
+           </p>
+           <ul>
+            <li>
+             tensor parallelism是指将模型的张量（tensor）沿着某个维度切分为多个子张量，分配到不同的设备上，每个设备只负责一部分张量的运算，然后通过通信合并各个子张量的结果。tensor parallelism可以减少每个设备的内存占用，但是也会增加通信的频率和量。tensor parallelism被Megatron-LM等模型采用。
+            </li>
+            <li>
+             序列并行是指将模型的序列（sequence）切分为多个子序列，分配到不同的设备上，每个设备只负责一部分序列的运算，然后通过通信传递各个子序列的结果。序列并行可以处理超长的序列，但是也会增加通信的延迟和依赖。序列并行被Reformer等模型采用。
+            </li>
+            <li>
+             pipeline parallelism是指将模型的层（layer）划分为多个阶段（stage），分配到不同的设备上，每个设备只负责一部分层的运算，然后通过通信传递各个阶段的结果。pipeline parallelism可以提高设备的利用率，但是也会增加通信的同步和冲突。pipeline parallelism的方法有：
+             <ul>
+              <li>
+               GPipe是一种基于流水线的并行方法，它将模型的层划分为多个阶段，每个阶段包含若干个层，然后将数据划分为多个微批次（micro-batch），每个微批次包含若干个样本，然后按照顺序将微批次输入到各个阶段，每个阶段完成一个微批次的运算后，将结果传递给下一个阶段，同时接收上一个阶段的结果，形成一个流水线的效果。GPipe可以提高设备的利用率，但是也会增加通信的同步和冲突。GPipe被EfficientNet等模型采用。
+              </li>
+              <li>
+               1F1B是一种基于流水线的并行方法，它与GPipe类似，也将模型的层划分为多个阶段，每个阶段包含若干个层，然后将数据划分为多个微批次，每个微批次包含若干个样本，然后按照顺序将微批次输入到各个阶段，每个阶段完成一个微批次的运算后，将结果传递给下一个阶段，同时接收上一个阶段的结果，形成一个流水线的效果。与GPipe不同的是，1F1B在每个阶段完成一个微批次的前向传播后，就立即进行反向传播，而不是等待所有的阶段都完成前向传播。1F1B可以减少通信的延迟，但是也会增加通信的频率和量。1F1B被PipeDream等模型采用。
+              </li>
+              <li>
+               interleaved 1F1B是一种基于流水线的并行方法，它与1F1B类似，也将模型的层划分为多个阶段，每个阶段包含若干个层，然后将数据划分为多个微批次，每个微批次包含若干个样本，然后按照顺序将微批次输入到各个阶段，每个阶段完成一个微批次的运算后，将结果传递给下一个阶段，同时接收上一个阶段的结果，形成一个流水线的效果。与1F1B不同的是，interleaved 1F1B在每个阶段完成一个微批次的反向传播后，就立即开始下一个微批次的前向传播，而不是等待所有的阶段都完成反向传播。interleaved 1F1B可以进一步减少通信的延迟，但是也会增加通信的复杂度。interleaved 1F1B被GShard等模型采用。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/603908668" rel="nofollow">
+             LLM（六）：GPT 的张量并行化（tensor parallelism）方案
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/506052424" rel="nofollow">
+             大模型训练：分布式训练之并行技术
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/613196255" rel="nofollow">
+             图解大模型训练之：流水线并行（Pipeline Parallelism），以Gpipe为例
+            </a>
+            <br/>
+            <a href="https://openai.com/research/techniques-for-training-large-neural-networks" rel="nofollow">
+             Techniques for training large neural networks
+            </a>
+           </p>
+           <h4>
+            <a id="2_95">
+            </a>
+            （2）数据并行
+           </h4>
+           <p>
+            数据并行是一种用于加速大型深度学习模型训练的技术，它可以将数据划分为多个部分，分配到不同的设备上，每个设备负责一部分数据的运算，然后通过通信汇总各个设备的结果。数据并行可以处理大量的数据，但是也会增加内存的占用和通信的量。简单介绍一下它们的原理和特点：
+           </p>
+           <ul>
+            <li>
+             DP（Data Parallelism）是一种基本的数据并行方法，它将数据划分为多个批次（batch），分配到不同的设备上，每个设备拥有模型的完整副本，每个设备完成一个批次的运算后，将梯度（gradient）发送给一个中心节点，中心节点对梯度进行平均，然后将更新后的参数发送给各个设备。DP可以简单地实现数据并行，但是也会造成内存的浪费和通信的瓶颈。DP被PyTorch等框架支持。
+            </li>
+            <li>
+             DDP（Distributed Data Parallelism）是一种改进的数据并行方法，它与DP类似，也将数据划分为多个批次，分配到不同的设备上，每个设备拥有模型的完整副本，每个设备完成一个批次的运算后，将梯度发送给一个中心节点，中心节点对梯度进行平均，然后将更新后的参数发送给各个设备。与DP不同的是，DDP使用了异步通信和梯度累积的技术，可以减少通信的延迟和量，提高训练的效率。DDP被PyTorch等框架支持。
+            </li>
+            <li>
+             FSDP（Fully Sharded Data Parallelism）是一种更进一步的数据并行方法，它与DDP类似，也将数据划分为多个批次，分配到不同的设备上，每个设备拥有模型的完整副本，每个设备完成一个批次的运算后，将梯度发送给一个中心节点，中心节点对梯度进行平均，然后将更新后的参数发送给各个设备。与DDP不同的是，FSDP使用了分片参数和重组梯度的技术，可以进一步减少内存的占用和通信的量，支持更大规模的模型和数据。
+            </li>
+            <li>
+             ZeRO（Zero Redundancy Optimizer）是一种基于数据并行和张量并行的方法，它将模型的参数和梯度划分为多个部分，分配到不同的设备上，每个设备只负责一部分参数和梯度的运算和更新，然后通过通信同步各个部分的结果。ZeRO可以大幅降低内存的占用和通信的量，支持超大规模的模型和数据。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/617133971" rel="nofollow">
+             图解大模型训练之：数据并行上篇(DP, DDP与ZeRO)
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/650002268" rel="nofollow">
+             大模型分布式训练并行技术（二）-数据并行
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/682564021" rel="nofollow">
+             [ LLM 分布式训练系列 01 ] 概览 &amp;&amp; 数据并行（Data Parallelism）- DP, DDP, ZeRO
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/343951042" rel="nofollow">
+             PyTorch 源码解读之 DP &amp; DDP：模型并行和分布式训练解析
+            </a>
+           </p>
+           <h3>
+            <a id="4_MoE_106">
+            </a>
+            4. MoE技术
+           </h3>
+           <p>
+            大模型训练moe是指混合专家（Mixture-of-experts，简称MoE）的，这是一种用于提高大型神经网络性能的技术，它可以将模型的一部分替换为多个专家，每个专家只负责处理一部分输入数据，从而增加模型的参数量和表达能力，同时减少计算量和训练时间。MoE的核心组件是门控网络（Gating network），它可以根据输入数据的特征，动态地选择合适的专家进行计算，然后将各个专家的输出进行加权平均，得到最终的结果。
+           </p>
+           <p>
+            大模型训练moe的主要挑战是如何在多个GPU上实现高效的分布式并行训练和推理，因为MoE的结构会引入额外的通信和同步的开销，以及内存和带宽的限制。为了解决这些问题，业界提出了一些优化的方法和系统，例如：
+           </p>
+           <ul>
+            <li>
+             DeepSpeed-MoE：这是一个基于DeepSpeed库的端到端的MoE训练和推理系统，它提供了多种最新的MoE结构，如Pyramid-MoE和Residual-MoE，以及模型压缩和蒸馏的技术，如PR-MoE和PR-MoS，它还提供了高度优化的推理系统，使用分布式切分策略，通信优化，以及内核优化，实现了低延迟和高吞吐的推理服务。
+            </li>
+            <li>
+             GSPMD：这是一个基于TensorFlow的MoE训练系统，它使用了数据并行，模型并行，流水线并行，以及张量并行的混合策略，实现了高效的分布式训练，它还使用了梯度累积，激活重计算，混合精度训练，以及ZeRO优化器等技术，实现了内存的节省，它还支持了多种门控网络的算法，如Top-k，Switch，以及Hash等。
+            </li>
+            <li>
+             HetuMoE：这是一个基于Hetu深度学习框架的MoE训练系统，它支持多种主流的门控网络算法，如Top-k，Switch，GShard，Hash，M6，SAM，BaseLayer，以及Dense-To-Sparse等，它还使用了层次通信算子，Hierarchical AllToAll，实现了针对单网卡异构网络的通信优化，它还对Top-k算子和Layout Transform算子进行了内核的优化，提高了计算的效率。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/489701281" rel="nofollow">
+             更全更快更强！HetuMoE开源：万亿大模型MoE训练系统
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/466363675" rel="nofollow">
+             对MoE大模型的训练和推理做分布式加速——DeepSpeed-MoE论文速读
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/420876923" rel="nofollow">
+             OpenAI 研究员最新博客：如何在多GPU上训练真正的大模型？
+            </a>
+           </p>
+           <h3>
+            <a id="4_PEFT_118">
+            </a>
+            4. PEFT训练
+           </h3>
+           <p>
+            PEFT是指参数高效微调（Parameter-Efficient Fine-Tuning）的，这是一种用于对大型预训练模型进行有效适应的技术，它只微调模型的一小部分参数，而不是所有的参数，从而降低了计算和存储的成本。PEFT的方法有很多种，您提到的Adapter类、Prompt类和LoRA类是其中的三种，简单介绍一下它们的原理和特点：
+           </p>
+           <ul>
+            <li>
+             Adapter类是指在模型的层之间插入额外的可训练模块，称为适配器（Adapters），并只优化这些模块的参数，而保持原始模型的参数不变。这种方法可以减少微调的参数量，同时保留原始模型的知识。适配器的形式有多种，例如残差连接、瓶颈层、注意力层等，它们可以根据不同的任务和领域进行定制和组合。适配器的方法有Adapter Tuning、DiffPruning、BitFit、MAM Adapters、UniPELT等。
+            </li>
+            <li>
+             Prompt类是指在模型的输入或输出端添加额外的可训练标记，称为提示（Prompts），并只优化这些标记的参数，而保持原始模型的参数不变。这种方法可以利用模型的生成能力，通过学习合适的提示来引导模型完成特定的任务。提示的形式有多种，例如软提示（Soft Prompts）、硬提示（Hard Prompts）、前缀提示（Prefix Prompts）等，它们可以根据不同的任务和领域进行定制和组合。提示的方法有Prompt Tuning、P-Tuning、P-Tuning v2、Prefix Tuning、PET等。
+            </li>
+            <li>
+             LoRA类是指对模型的参数进行低秩分解（Low-Rank Decomposition），并只优化分解后的参数，而保持原始模型的参数不变。这种方法可以利用模型的内在维度（Intrinsic Dimensionality），通过学习一个低秩的差异向量（Diff Vector）来微调模型。低秩分解的形式有多种，例如矩阵分解、张量分解、哈希分解等，它们可以根据不同的任务和领域进行定制和组合。低秩分解的方法有LoRA、AdaLoRA、QLoRA等。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/639068809" rel="nofollow">
+             大模型高效微调综述下： DiffPruning、BitFit、LoRa、AdaLoRA、MAM Adapters、UniPELT
+            </a>
+            <br/>
+            <a href="https://blog.csdn.net/liuqixuan1994/article/details/130664198">
+             【peft】huggingface大模型加载多个LoRA并随时切换
+            </a>
+            <br/>
+            <a href="https://blog.csdn.net/qinduohao333/article/details/131424597">
+             详解大模型微调方法LoRA Adapter(内附实现代码)
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/677097900" rel="nofollow">
+             大模型PEFT技术原理（一）：BitFit、Prefix Tuning、Prompt Tuning
+            </a>
+           </p>
+           <h3>
+            <a id="5__129">
+            </a>
+            5. 上下文扩展技术
+           </h3>
+           <p>
+            上下文扩展技术的，这是一种用于提高大型语言模型（LLM）对长文本的处理能力的技术，它可以让模型在不增加参数量的情况下，扩展其注意力范围，从而提高模型的语言理解和生成能力。上下文扩展技术有很多种，简单介绍一下它们的原理和特点：
+           </p>
+           <ul>
+            <li>
+             window attention是指将模型的注意力限制在一个固定大小的窗口内，只关注最近的一部分文本，从而减少计算量和内存占用。这种方法可以提高模型的效率，但是也会损失一些长距离的信息。window attention被Reformer、Longformer等模型采用。
+            </li>
+            <li>
+             注意力缩放是指将模型的注意力分解为多个不同的尺度，从而实现不同的粒度和范围的注意力。这种方法可以提高模型的灵活性，但是也会增加一些复杂度。注意力缩放被BigBird、Linformer等模型采用。
+            </li>
+            <li>
+             streaming-llm是指将模型的输入和输出分割为多个子序列，从而实现流式的语言模型。这种方法可以处理无限长度的文本，但是也会增加一些延迟和依赖。streaming-llm被StreamingLLM、SwiftInfer等模型采用。
+            </li>
+            <li>
+             RoPE改进是指对模型的位置编码进行改进，使其能够更好地捕捉相对位置的信息。这种方法可以提高模型的泛化能力，但是也会增加一些计算量。RoPE改进被RoPE、ALiBi等模型采用。
+            </li>
+            <li>
+             Alibi是指在模型的输入或输出端添加额外的标记，称为借口（Alibi），用于提供上下文信息。这种方法可以提高模型的生成质量，但是也会增加一些参数量。Alibi被Alibi、Alibi-2等模型采用。
+            </li>
+           </ul>
+           <p>
+            <a href="https://huggingface.co/blog/tomaarsen/attention-sinks" rel="nofollow">
+             Attention Sinks in LLMs for endless fluency
+            </a>
+            <br/>
+            <a href="https://huggingface.co/blog/optimize-llm" rel="nofollow">
+             Optimizing your LLM in production
+            </a>
+           </p>
+           <h2>
+            <a id="_140">
+            </a>
+            三、大模型推理
+           </h2>
+           <h3>
+            <a id="1__141">
+            </a>
+            1. 模型压缩
+           </h3>
+           <h4>
+            <a id="1_142">
+            </a>
+            （1）剪枝
+           </h4>
+           <p>
+            剪枝是一个关于如何通过删除大型预训练语言模型中的一些参数或层来减少模型大小和计算复杂度的主题。这样可以提高模型在不同平台上的适应性和效率，同时保持或提高模型的生成能力和泛化能力。大语言模型剪枝的方法可以分为以下几类：
+           </p>
+           <ul>
+            <li>
+             基于重要性的剪枝：根据参数的重要性，如权重、梯度、敏感度或注意力，删除单个参数或连接。这种方法可以更细粒度地控制剪枝的程度和位置，但可能会破坏模型的稀疏性，导致额外的索引开销。
+            </li>
+            <li>
+             基于模式的剪枝：根据参数的模式，如低秩、冗余或共享，删除整个参数组或矩阵。这种方法可以直接减少模型的存储空间和计算量，但可能会损失较多的信息。
+            </li>
+            <li>
+             基于知识蒸馏的剪枝：利用一个较小的学生模型来模仿一个较大的教师模型的行为，通过学习教师模型的输出、中间层或注意力分布，来压缩模型的大小。这种方法可以保留模型的语义和结构，但可能会增加训练的时间和难度。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/630902012" rel="nofollow">
+             NeurIPS 2023 | LLM-Pruner: 大语言模型的结构化剪枝
+            </a>
+            <br/>
+            <a href="https://www.zhihu.com/question/625415893" rel="nofollow">
+             目前针对大模型蒸馏的方法有哪些？
+            </a>
+           </p>
+           <h4>
+            <a id="2_150">
+            </a>
+            （2）量化
+           </h4>
+           <p>
+            大语言模型量化是一种技术，用于通过降低模型参数的数值精度，来减少模型的存储空间和计算复杂度。这样可以提高模型在不同平台上的适应性和效率，同时保持或提高模型的生成能力和泛化能力。
+           </p>
+           <p>
+            根据是否需要使用校准数据集来确定量化的阈值和比例，大语言模型量化的方法可以分为以下两类：
+           </p>
+           <ul>
+            <li>
+             校准量化：需要在量化前或量化后，使用一个校准数据集来估计或调整量化的参数，以减少量化误差。这种方法通常可以获得较高的精度，但需要额外的数据和时间。一些校准量化的方法有：
+             <ul>
+              <li>
+               GPTQ：一种基于重要性的剪枝和量化方法，用于压缩大型预训练语言模型，如GPT-3。该方法利用了自注意力机制，通过计算每个参数对于模型输出的影响，来确定其重要性，并将其量化为4位整数。该方法需要在量化前使用一个校准数据集来估计阈值。
+              </li>
+              <li>
+               AWQ：一种基于自适应权重量化的方法，用于压缩大型预训练语言模型，如BERT。该方法利用了梯度信息，通过动态地调整量化的比例，来适应不同的权重分布。该方法需要在量化后使用一个校准数据集来微调模型。
+              </li>
+              <li>
+               SmoothQuant：一种基于平滑化的量化方法，用于压缩大型预训练语言模型，如GPT-2。该方法利用了平滑化技术，通过在量化前后添加噪声，来减少量化误差。该方法需要在量化前使用一个校准数据集来估计噪声的方差。
+              </li>
+              <li>
+               SpQR：一种基于稀疏化和量化的方法，用于压缩大型预训练语言模型，如RoBERTa。该方法利用了稀疏化技术，通过在量化前后剪枝掉一些不重要的参数，来减少模型的大小。该方法需要在量化前使用一个校准数据集来确定剪枝的阈值。
+              </li>
+             </ul>
+            </li>
+            <li>
+             非校准量化：不需要使用校准数据集来确定量化的参数，而是直接根据模型的输出或权重的分布来进行量化。这种方法通常可以节省数据和时间，但可能会损失一些精度。一些非校准量化的方法有：
+             <ul>
+              <li>
+               LLM.int8：一种基于混合精度分解的量化方法，用于压缩大型预训练语言模型，如BLOOM。该方法利用了硬件描述，通过将包含了离群值的几个维度从矩阵中分离出来，对其做高精度的矩阵乘法；其余部分进行8位整数量化。该方法不需要使用校准数据集，而是直接根据权重的最大值来确定阈值。
+              </li>
+              <li>
+               ZeroQuant：一种基于零点对齐的量化方法，用于压缩大型预训练语言模型，如T5。该方法利用了零点对齐技术，通过在量化前后对权重进行偏移，使其均值为零，从而减少量化误差。该方法不需要使用校准数据集，而是直接根据权重的均值和方差来确定阈值和比例。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/652421368" rel="nofollow">
+             使用 AutoGPTQ 和 transformers 让大语言模型更轻量化
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/627436535" rel="nofollow">
+             LLM（十一）：大语言模型的模型量化(INT8/INT4)技术
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/671007819" rel="nofollow">
+             LLM量化综合指南（8bits/4bits）
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/680212402" rel="nofollow">
+             大模型量化技术原理-LLM.int8()、GPTQ
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/681158646" rel="nofollow">
+             大模型量化技术原理-SmoothQuant
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/681578090" rel="nofollow">
+             大模型量化技术原理-AWQ、AutoAWQ
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/682871823" rel="nofollow">
+             大模型量化技术原理-SpQR
+            </a>
+           </p>
+           <h3>
+            <a id="2__172">
+            </a>
+            2. 显存优化技术
+           </h3>
+           <p>
+            显存优化技术是指一些方法和算法，旨在减少大型语言模型（LLM）在推理或训练过程中对显存的消耗和占用。这些技术可以提高LLM的性能和效率，以及支持更长的序列和更大的批量大小。
+           </p>
+           <p>
+            经典显存优化技术分别是：
+           </p>
+           <ul>
+            <li>
+             PagedAttention：一种基于虚拟内存和分页技术的注意力算法，可以将键值缓存（KV cache）分块存储在非连续的内存空间中，从而减少内存碎片和冗余复制。
+            </li>
+            <li>
+             Quantized KV cache：一种对KV cache进行低比特整数化的方法，可以压缩KV cache的大小，降低内存需求和带宽消耗。
+            </li>
+            <li>
+             MQA/GQA：一种在多头注意力（MHA）和多查询注意力（MQA）之间插值的方法，可以在保持MHA的质量的同时，达到MQA的速度。MQA/GQA通过将查询头分成若干组，每组共享一个键头和值头，来实现这一目标。
+            </li>
+            <li>
+             Flash-Attention：一种利用GPU非对称的存储器层次结构，实现快速和内存高效的精确注意力的算法。Flash-Attention通过使用分块技术，减少了HBM和GPU片上SRAM之间的内存读写次数。
+            </li>
+            <li>
+             Flash-Attention-v2：一种在Flash-Attention的基础上，进一步提高注意力计算速度和并行性的算法。Flash-Attention-v2通过改进工作分配，减少非矩阵乘法的FLOPs，增加线程块之间的并行度，以及减少共享内存的通信，实现了比Flash-Attention约2倍的加速。
+            </li>
+            <li>
+             Flash-Attention-Decoding：一种针对推理过程中的注意力计算的加速技术，可以在非常长的序列上实现高达8倍的生成速度提升。Flash-Attention-Decoding的主要思想是尽快并行地加载键和值，然后分别重新缩放和组合结果，以保持正确的注意力输出。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/656485997" rel="nofollow">
+             大语言模型推理性能优化综述
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/649537608" rel="nofollow">
+             vLLM框架原理——PagedAttention
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/669194423" rel="nofollow">
+             实用干货 | 大语言模型推理中的挑战与优化方案
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/647130255" rel="nofollow">
+             为什么现在大家都在用 MQA 和 GQA？
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/645376942" rel="nofollow">
+             FlashAttention2详解（性能比FlashAttention提升200%）
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/661478232" rel="nofollow">
+             FlashAttenion-V3: Flash Decoding详解
+            </a>
+           </p>
+           <h3>
+            <a id="3__189">
+            </a>
+            3. 调度优化技术
+           </h3>
+           <p>
+            LLM调度优化技术是指一些方法和算法，旨在提高LLM推理服务的性能和效率，通过合理地安排和执行不同的请求和任务。这些技术可以降低延迟，提高吞吐量，节省资源，适应动态的工作负载，以及支持多样化的应用场景。
+           </p>
+           <p>
+            四种LLM调度优化技术分别是：
+           </p>
+           <ul>
+            <li>
+             Dynamic batching：一种动态地将多个请求组合成一个批次的方法，可以减少GPU的内存传输开销，提高计算利用率，同时保持一定的延迟要求。动态批处理可以根据请求的到达时间，序列长度，生成步数等因素来调整批次的大小和内容。
+            </li>
+            <li>
+             Async serving：一种异步地处理请求的方法，可以解决同步服务中的阻塞和等待问题，提高系统的并发性和响应性。异步服务可以使用消息队列，事件循环，回调函数等技术来实现请求的异步接收，处理和返回。
+            </li>
+            <li>
+             Continuous/interative-level batching：一种在迭代级别进行批处理的方法，可以动态地调整批次中的请求，以适应LLM的迭代生成过程。连续/迭代级批处理可以在生成过程中实时地替换已完成的请求，从而提高批次的利用率，减少空闲时间，降低延迟。
+            </li>
+            <li>
+             Sarathi/Fastgen：一种利用多层缓存和分割融合技术来加速LLM推理的方法，可以在不损失精度的情况下，显著提高吞吐量和降低内存占用。Sarathi/Fastgen可以将LLM的提示和生成分成多个块，分别存储在不同的缓存层次中，然后在合适的时机进行融合计算，从而减少内存传输和计算的开销。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/652165071" rel="nofollow">
+             continuous batching在LLM推理中的意义
+            </a>
+           </p>
+           <h3>
+            <a id="4__199">
+            </a>
+            4. 请求优化技术
+           </h3>
+           <p>
+            LLM请求优化技术是指一些方法和算法，旨在提高LLM推理服务的质量和效果，通过合理地设计和处理不同的请求和响应。这些技术可以降低网络延迟，提高用户满意度，节省资源，适应动态的用户需求，以及支持多样化的应用场景。
+           </p>
+           <p>
+            两种LLM请求优化技术分别是：
+           </p>
+           <ul>
+            <li>
+             网络通信优化：一种优化网络层面的传输效率和稳定性的方法，可以减少网络拥塞，提高网络带宽，同时保持网络安全和可靠。网络通信优化的方法有：
+             <ul>
+              <li>
+               速率提升：通过使用高速网卡，高性能交换机，高带宽光纤等硬件设备，来提升网络的传输速率。
+              </li>
+              <li>
+               数量提升：通过使用多网卡，多链路，多路径等技术，来提升网络的传输容量。
+              </li>
+              <li>
+               RDMA技术：通过使用远程直接内存访问（RDMA）技术，来实现GPU之间的直接数据传输，减少CPU的干预和内存的拷贝，降低网络的延迟和开销 。
+              </li>
+              <li>
+               通信算法优化：通过使用高效的通信算法，如Ring-Allreduce，NCCL，MPI等，来实现GPU之间的梯度同步和规约，提高网络的并行性和吞吐量 。
+              </li>
+             </ul>
+            </li>
+            <li>
+             响应模式优化：一种优化应用层面的响应效果和体验的方法，可以减少响应时间，提高响应质量，同时保持响应的一致性和完整性 。响应模式优化的方法有：
+             <ul>
+              <li>
+               动态批处理：通过动态地将多个请求组合成一个批次，来减少GPU的内存传输开销，提高计算利用率，同时保持一定的延迟要求 。动态批处理可以根据请求的到达时间，序列长度，生成步数等因素来调整批次的大小和内容 。
+              </li>
+              <li>
+               异步服务：通过异步地处理请求，来解决同步服务中的阻塞和等待问题，提高系统的并发性和响应性 。异步服务可以使用消息队列，事件循环，回调函数等技术来实现请求的异步接收，处理和返回 。
+              </li>
+              <li>
+               连续/迭代级批处理：通过在迭代级别进行批处理，来动态地调整批次中的请求，以适应LLM的迭代生成过程 。连续/迭代级批处理可以在生成过程中实时地替换已完成的请求，从而提高批次的利用率，减少空闲时间，降低延迟 。
+              </li>
+              <li>
+               响应内容优化：通过优化响应的内容，如使用摘要，关键词，标题等方式，来减少响应的长度，提高响应的可读性，同时保持响应的信息量和质量 。
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h3>
+            <a id="5__214">
+            </a>
+            5. 采样和解码加速
+           </h3>
+           <p>
+            加速LLM的采样和解码过程，即从模型的概率分布中抽取单词的过程。这些方法可以分为两类：一类是对模型或系统进行修改，以提高计算效率或并行性；另一类是对生成过程进行优化，以减少生成的步数或增加生成的并行度。它们的主要思想和特点如下：
+           </p>
+           <ul>
+            <li>
+             Speculative decoding：一种利用辅助模型来预测目标模型的输出的方法，可以同时生成多个候选单词，然后用目标模型进行验证，从而减少目标模型的调用次数。这种方法可以在不改变生成分布的情况下，显著提高生成速度，但也可能引入一些错误或不一致的单词。
+            </li>
+            <li>
+             Specinfer：一种基于树形结构的推测和验证的方法，可以将多个辅助模型的预测组织成一个候选单词树，然后用目标模型在并行的方式下对树中的所有候选单词进行验证，从而提高生成的并行度和吞吐量。这种方法可以在保证生成质量的情况下，显著提高生成速度，但也需要较多的辅助模型和计算资源。
+            </li>
+            <li>
+             Medusa：一种利用多头注意力（MHA）和多查询注意力（MQA）之间的插值来加速LLM的生成的方法，可以在保持MHA的质量的同时，达到MQA的速度。这种方法可以在不改变模型结构的情况下，提高生成速度，但也需要对模型参数进行调整和微调。
+            </li>
+            <li>
+             Blockwise parallel decoding：一种在块级别进行并行生成的方法，可以同时生成多个单词，然后回退到最长的有效前缀，从而减少生成的步数。这种方法可以在不改变生成分布的情况下，提高生成速度，但也需要额外的前馈神经网络（FFN）头来进行预测。
+            </li>
+            <li>
+             SOT-parallel decoding：一种先生成答案的骨架，然后并行地生成每个骨架点的内容的方法，可以减少生成的步数，同时提高生成的质量。这种方法可以在不修改模型或系统的情况下，提高生成速度，但也需要设计合适的骨架生成提示。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/652823496" rel="nofollow">
+             Blockwise Parallel Decoding: 一种加速LLM解码的并行方法
+            </a>
+            <br/>
+            <a href="https://huggingface.co/blog/whisper-speculative-decoding" rel="nofollow">
+             Speculative Decoding for 2x Faster Whisper Inference
+            </a>
+            <br/>
+            <a href="https://github.com/imagination-research/sot">
+             Skeleton-of-Thought: Large Language Models Can Do Parallel Decoding
+            </a>
+           </p>
+           <h3>
+            <a id="6__226">
+            </a>
+            6. 模型并行策略
+           </h3>
+           <p>
+            模型并行策略是指一些方法和算法，旨在将一个大型的语言模型（LLM）分割成多个部分，并在不同的设备上并行地执行推理计算。这些策略可以解决LLM的内存限制问题，提高LLM的推理速度和效率，以及支持更长的序列和更大的批量大小。
+           </p>
+           <p>
+            两种模型并行策略分别是：
+           </p>
+           <ul>
+            <li>
+             TP（Tensor Parallelism）：一种在张量维度上进行模型划分的策略，可以将LLM的权重矩阵按照行或列进行分块，从而减少每个设备上的参数数量。TP可以根据不同的维度划分方式，分为1D，2D，2.5D，3D等多种形式 。TP的优点是可以有效地降低内存占用，缺点是需要额外的通信开销来同步不同设备上的结果。
+            </li>
+            <li>
+             PP（Pipeline Parallelism）：一种在层级上进行模型划分的策略，可以将LLM的每一层或每几层分配到不同的设备上，从而减少每个设备上的计算量。PP可以根据不同的调度方式，分为Native，GPipe，PipeDream，Virtual Pipe等多种形式 。PP的优点是可以有效地提高计算效率，缺点是需要额外的缓存空间来存储中间结果。
+            </li>
+           </ul>
+           <p>
+            <a href="https://www.zhihu.com/question/592729564" rel="nofollow">
+             大模型训练 Pipeline Parallel 流水并行性能有没有什么评价指标？或者分析方法？
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/581677880" rel="nofollow">
+             深度学习并行训练算法一锅炖: DDP, TP, PP, ZeRO
+            </a>
+            <br/>
+            <a href="https://blog.csdn.net/yuanyuanxingxing/article/details/132412847">
+             数据并行(DP)、张量模型并行(TP)、流水线并行(PP)
+            </a>
+           </p>
+           <h3>
+            <a id="7_237">
+            </a>
+            7.其他
+           </h3>
+           <p>
+            大模型算子融合是指通过合理地设计和实现不同的算子和优化策略。这些方法和技术可以减少内存占用，降低计算开销，提高并行度，适应不同的硬件平台，以及支持多样化的应用场景。
+           </p>
+           <p>
+            两种优化方法分别是：
+           </p>
+           <ul>
+            <li>
+             No padding：一种减少无效计算的方法，可以根据输入序列的实际长度，动态地调整算子的计算范围，从而避免对填充的零值进行计算。这种方法可以节省内存和计算资源，提高吞吐量，同时保持生成质量。
+            </li>
+            <li>
+             高性能算子：一种利用高度优化的算子库或自定义算子的方法，可以针对特定的硬件平台或场景，实现高效的矩阵乘法，卷积，注意力等核心算子 。这种方法可以充分发挥硬件的计算能力，提高性能和稳定性，同时支持定制化的需求。
+            </li>
+           </ul>
+           <h2>
+            <a id="_244">
+            </a>
+            四、大模型应用
+           </h2>
+           <h3>
+            <a id="1_RAG_245">
+            </a>
+            1. RAG
+           </h3>
+           <p>
+            RAG是一种先进的人工智能技术，它将信息检索与文本生成相结合，使AI模型能够从知识源中检索相关信息，并将其其融入生成的文本中。RAG的核心思想是利用VecDBs作为LLMs的外部知识库，以提高LLMs在回答复杂问题时的准确性和丰富性。RAG框架有两个主要组件：检索模型和生成模型。这些组件可以根据应用场景进行不同的配置和微调，共同使RAG模型成为一个非常灵活和强大的工具。
+           </p>
+           <ul>
+            <li>
+             检索模型负责根据输入查询找到相关文档。
+            </li>
+            <li>
+             生成模型使用检索到的文档和原始查询来生成回应。
+            </li>
+           </ul>
+           <p>
+            Chain-of-Note（CoN）是一种新的方法，旨在提高 RALMs（Retrieval Augmented Language Models）在面对对噪声、无关文档和未知场景时的的鲁棒性3。CoN 的核心思想是为检索文档生成顺序阅读笔记，使其能够全面评估它们与给定问题的相关性，并将这些信息整合到最终答案中。
+           </p>
+           <p>
+            self-rag是一种新的检索增强生成（RAG）的方法，它可以让大型语言模型（LLM）自己检索、生成和评价相关的信息，从而提高生成文本的质量和准确性。self-rag的主要特点是：
+           </p>
+           <ul>
+            <li>
+             它可以根据不同的问题和场景，灵活地选择是否检索，以及检索多少篇文档，而不是像传统的RAG那样固定检索数量。
+            </li>
+            <li>
+             它可以在生成文本的过程中，使用特殊的反思标记（reflection tokens），来表达对检索文档和自身生成的评价，例如是否相关、是否可信、是否有用等。
+            </li>
+            <li>
+             它可以根据不同的任务需求，通过选择不同的反思标记，来控制生成文本的行为，例如是否引用、是否扩展、是否纠正等。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/661465330" rel="nofollow">
+             LLM（廿一）：从 RAG 到 Self-RAG —— LLM 的知识增强
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/661526939" rel="nofollow">
+             RAG (检索增强生成)技术详解：揭秘基于垂直领域专有数据的Chatbots是如何实现的
+            </a>
+           </p>
+           <h4>
+            <a id="1Langchain_259">
+            </a>
+            （1）Langchain
+           </h4>
+           <p>
+            LangChain是一个基于大型语言模型（LLMs）和向量数据库（VecDBs）的新型解决方案，旨在解决LLMs在处理和集成来自外部数据库的大量动态数据时面临的挑战。LangChain提供了多种文档加载器（DocLoader）和文本分割器（TextSplitter），以帮助您轻松地将文档从不同的源加载到LangChain系统，并对文档进行适当的转换和组合。
+           </p>
+           <ul>
+            <li>
+             DocLoader是用于从不同类型的文档（如PDF、网页、YouTube视频等）加载数据到LangChain系统的类。它们可以将文档转换为LangChain系统可以处理的格式，并提供了“load”方法来从配置源加载数据。
+            </li>
+            <li>
+             TextSplitter是用于将长文本分割为小块，以更好地适应您的应用场景的类。它们可以根据不同的标准（如字符、句子、HTML特定字符等）对文本进行分割，并添加相关的元数据。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/652066610" rel="nofollow">
+             Langchain文档分割器代码详解
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/644938147" rel="nofollow">
+             让Langchain与你的数据对话(一)：数据加载与分割
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/668082024" rel="nofollow">
+             一文搞懂大模型RAG应用（附实践案例）
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/671371646" rel="nofollow">
+             一文搞定检索增强生成（RAG）的理解和LangChain实现（附详细代码）
+            </a>
+           </p>
+           <h4>
+            <a id="2_268">
+            </a>
+            （2）向量数据库
+           </h4>
+           <p>
+            向量数据库是一种特殊的数据库，它以多维向量的形式保存信息。根据数据的复杂性和细节，每个向量的维数变化很大，从几个到几千个不等。这些数据可能包括文本、图像、音频和视频，使用各种过程 (如机器学习模型、词词嵌入或特征提取技术)将其转换为向量。矢量数据库的主要优点是它能够根据数据的的矢量接近度或相似性快速准确地定位和检索数据。这允许基于语义或上下文相关性的搜索，而不是像传统数据库那样仅仅依赖于精确匹配或设置标准。
+           </p>
+           <p>
+            一些常见的向量数据库包括NSW, NSG, HNSW, DiskAnn, LSH, IVF。其中，HNSW全称Hierarchical NSW，NSW是Navigable Small World，即“可导航小世界网络”算法。HNSW这种图索引结构因为其稳定、优秀的性能表现以及简单的参数配置，已经成为向量检索场景的标配。DiskANN是一种基于于磁盘的ANNS（近似最近邻搜索）解决方案，它能够在单个机器上实现高达5000 QPS（查询每秒）并且保持高达95% recall。
+           </p>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/628148081" rel="nofollow">
+             主流向量数据库一览
+            </a>
+            <br/>
+            <a href="https://cloud.tencent.com/developer/article/2312534" rel="nofollow">
+             向量数据库｜一文全面了解向量数据库的基本概念、原理、算法、选型
+            </a>
+            <br/>
+            <a href="https://cloud.tencent.com/developer/article/2328915" rel="nofollow">
+             向量数据库简介和5个常用的开源项目介绍
+            </a>
+           </p>
+           <h4>
+            <a id="3RAG_276">
+            </a>
+            （3）RAG优化
+           </h4>
+           <p>
+            RAG 的优化方法主要包括以下几个方面：
+           </p>
+           <ul>
+            <li>
+             NL2Cypher 和 NL2SQL 是两种将自然语言问题转换为 Cypher 或 SQL 查询语句的技术，它们可以用于从知识图谱或关系数据库中检索信息，作为 RAG 的输入。NL2Cypher 和 NL2SQL 都是将自然语言问题转换为数据库查询语言的技术，但它们的目标数据库不同。
+             <ul>
+              <li>
+               NL2Cypher 的目标数据库是图数据库，图数据库使用节点和边来表示数据和关系，图数据库的查询语言是 Cypher。
+              </li>
+              <li>
+               NL2SQL 的目标数据库是关系数据库。关系数据库使用表格和键来表示数据和关系。关系数据库的查询语言是 SQL。
+              </li>
+             </ul>
+            </li>
+            <li>
+             文本检索是指根据自然语言问题，从大规模的文本数据中检索出相关的文档或片段的技术，它是 RAG 的重要组成部分。文本检索的主要方法有基于词项的检索和基于向量的检索。基于词项的检索是指利用词项频率、逆文档频率等统计信息，来计算自然语言问题和文本数据之间的相似度，从而返回最相关的结果。基于向量的检索是指利用深度学习模型，如 BERT、GPT 等，来将自然语言问题和文本数据转换为低维稠密的向量，然后利用向量空间中的距离或角度，来衡量自然语言问题和文本数据之间的相似度，从而返回最相关的结果。
+            </li>
+            <li>
+             embedding 训练是指利用深度学习模型，如 BERT、GPT 等，来学习自然语言问题和文本数据的嵌入向量的技术，它是基于向量的检索的基础。embedding 训练的目的是使得自然语言问题和文本数据的嵌入向量能够尽可能地保留其语义信息，并且能够反映其相似度或相关度。embedding 训练的方法有多种，如基于对比学习的方法，利用正负样本对来训练嵌入向量，使得正样本对的嵌入向量距离更近，负样本对的嵌入向量距离更远；基于知识蒸馏的方法，利用预训练的大型语言模型作为教师模型，来指导嵌入向量的学习，使得嵌入向量能够接近教师模型的输出；基于多任务学习的方法，利用不同的下游任务，如分类、匹配、生成等，来共同训练嵌入向量，使得嵌入向量能够适应多种场景。
+            </li>
+            <li>
+             reranker 是指对检索出的文档或片段进行重新排序的技术，它是 RAG 的优化组件之一。reranker 的作用是在检索阶段返回的结果中，进一步筛选出最相关的结果，提高 RAG 的生成效率和质量。reranker 的主要方法有基于双塔模型的方法，利用两个深度学习模型，分别对自然语言问题和文本数据进行嵌入向量的计算，然后利用向量空间中的距离或角度，来对检索结果进行重新排序；基于交叉编码器的方法，利用一个深度学习模型，将自然语言问题和文本数据拼接起来，作为一个整体输入，然后利用模型的输出，来对检索结果进行重新排序。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/670172587" rel="nofollow">
+             检索增强生成技术(RAG)深度优化指南：原理、挑战、措施、展望
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/676499800" rel="nofollow">
+             大模型RAG问答技术架构及核心模块：从Embedding、prompt-embedding到Reranker
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/675269272" rel="nofollow">
+             NLP（八十三）RAG框架中的Rerank算法评估
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/660596492" rel="nofollow">
+             LLM in Reranking——利用LLM进行重排
+            </a>
+           </p>
+           <h3>
+            <a id="2_Agent_290">
+            </a>
+            2. Agent
+           </h3>
+           <p>
+            大模型Agent是指能够利用大语言模型（LLM）进行记忆检索、决策推理和行动顺序选择等，把Agent的智能程度提升到了新的高度。大模型Agent的基本组件包括以下几个方面：
+           </p>
+           <ul>
+            <li>
+             感知（Perception）：Agent从环境中收集信息并从中提取相关知识的能力。
+            </li>
+            <li>
+             规划（Planning）：Agent为了某一目标而作出的决策过程。
+            </li>
+            <li>
+             行动（Action）：基于环境和规划做出的动作。
+            </li>
+            <li>
+             记忆（Memory）：获取、、储存、保留以及后来检索信息的过程3。记忆可以分为不同类型，如感觉记忆、、短期记忆和长期记忆。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/651746262" rel="nofollow">
+             基于大语言模型的AI Agents—Part 1
+            </a>
+           </p>
+           <h4>
+            <a id="_300">
+            </a>
+            对齐微调
+           </h4>
+           <p>
+            对齐微调是指将大语言模型的行为与人类的价值观或偏好对对齐，从而提高其在不同任务和场景中的适应性和可信度。
+           </p>
+           <p>
+            在工具调用领域，有几种基于对对齐微调的方案：
+           </p>
+           <ul>
+            <li>
+             Toolformer是一种工具调用方案，它使用LLM监督微调得到可以进行Inline工具调用的模型。解码时，模型会在恰当的位置生成API调用的请求，并中止解码，去调用API得到返回值，把返回值拼接到"-&gt;"字符之后，再继续模型解码。
+            </li>
+            <li>
+             TALM是一种Tool Augmented Language Models（增强型工具语言模型），它使用自监督学习和对对齐技术来教会LLM如何使用不同类型的工具，并在多个下游任务上实现零样本或少样本学习。
+            </li>
+            <li>
+             Chain of Hindsight是一种新颖的技术，它利用所有可用的反馈数据来提高模型性能。它把语言模型的条件放在一连串的hindsight feedback上，使它们能够有效地利用所有的例子，而不管它们的偏好分数如何。
+            </li>
+            <li>
+             Algorithm Distillation是一种传统的技术，它通过在一个大型模型上学习一个小型模型来减少计算成本和内存需求。它可以用于对对齐不同大小或不同领域的大语言模型，并保持其通用性和准确性。
+            </li>
+           </ul>
+           <p>
+            <a href="https://www.cnblogs.com/gogoSandy/p/17609053.html" rel="nofollow">
+             解密Prompt系列13. LLM Agent-指令微调方案: Toolformer &amp; Gorilla
+            </a>
+            <br/>
+            <a href="https://github.com/ninehills/blog/issues/92">
+             大语言模型（LLM）微调技术笔记
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/623762302" rel="nofollow">
+             Chain of Hindsight Aligns Language Models with Feedback 阅读笔记
+            </a>
+           </p>
+           <h4>
+            <a id="_314">
+            </a>
+            框架
+           </h4>
+           <p>
+            ReAct和Reflexion是两种不同的框架，它们都试图通过结合推理和动作来优化Agent的行为。它们的主要特点和区别是：
+           </p>
+           <ul>
+            <li>
+             ReAct是一种将推理和动作相结合的范式，它让LLM在执行任务时，先生成内心独白，然后根据独白做出相应的动作2。这样可以克服LLM胡言乱语的问题，同时提高了结果的可解释性和可信赖度2。ReAct还可以通过微调finetuning的方式，将正确的推理动作轨迹输入进LLM，从而进一步提高准确率。
+            </li>
+            <li>
+             Reflexion是一种配备动态记忆和自我反思能力以提高推理技能的框架，它与ReAct不同，它可以利用所有可用的反馈数据来提高模型性能3。它把传统梯度更新中的参数信号转变为添加在大模型上下文中的语言总结，使得Agent在下一个episode中能参考上次执行失败的失败经验，从而提高Agent的执行效果3。这个过程和人类反思 (reflexion)过程十分相似。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/624003116" rel="nofollow">
+             ReAct论文解读：LLM ReAct范式，在大语言模型中结合推理和动作
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/639254455" rel="nofollow">
+             【论文阅读】Reflexion: 大模型如何从错误经验中学习？
+            </a>
+           </p>
+           <h3>
+            <a id="3_Prompt_Engineering_322">
+            </a>
+            3. Prompt Engineering
+           </h3>
+           <p>
+            Prompt Engineering是一种利用大语言模型（LLM）进行各种任务的技术，它通过设计和修改输入文本（即prompt），来引导和优化模型的输出。Prompt Engineering的目的是让模型能够正确理解和执行用户的指令，从而提高模型的效率和可靠性。
+           </p>
+           <p>
+            您提到的思维链（CoT）、思维树（ToT）和思维图（GoT）是三种不同的Prompt Engineering技术，它们都是基于工具调用的范式，即让模型能够调用外部的API或函数来完成一些特定的任务2。我将简要介绍它们的主要特点和区别：
+           </p>
+           <ul>
+            <li>
+             思维链（CoT）是一种提示方法，除了任务输入/输出之外，还包括提示中推理的中间步骤（中间“想法”）。CoT 被证明可以显着提高法LLMs解决问题的能力，而无需任何模型参数的更新。CoT 的一个主要改进是 CoT 的自我一致性（CoT-SC），它是一种生成多个 CoT 的方案，然后选择最好的一个作为结果。
+            </li>
+            <li>
+             思维树（ToT）是一种将推理和动作相结合的范式，它让LLM在执行任务时，先生成内心独白，然后根据独白做出相应的动作。这样可以克服LLM胡言乱语的问题，同时提高了结果的可解释性和可信赖度。ToT还可以通过微调finetuning的方式，将正确的推理动作轨迹输入进LLM，从而进一步提高准确率。
+            </li>
+            <li>
+             思维图（GoT）是一种通过网络推理增强LLM能力的方法，它利用的图形抽象无缝地将 CoT 和 ToT 概括为更复杂的思维模式，而无需任何模型参数的更新。在GoT中，LLM思想被建模为顶点，而边是这些思想之间的依赖关系。使用 GoT可以通过构造具有多个传入边的顶点来聚合任意想法。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/654222969" rel="nofollow">
+             从思维链(CoT)，到思维树(ToT)，再到思维图(GoT)：用LLMs解决复杂问题！
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/608789453" rel="nofollow">
+             漫谈Prompt（提示工程）与CoT（思维链）
+            </a>
+           </p>
+           <h2>
+            <a id="_333">
+            </a>
+            五、大模型框架
+           </h2>
+           <h3>
+            <a id="1__334">
+            </a>
+            1. 训练框架
+           </h3>
+           <p>
+            有几个流行的框架可以用于训练大规模的 transformer 模型。包括
+           </p>
+           <ul>
+            <li>
+             Megatron-LM，它是 NVIDIA 开发的一个用于训练大规模 transformer 模型的项目。它基于 PyTorch 框架，实现了高效的并行策略，包括模型并行、数据并行和管道并行。Megatron-LM 还采用了混合精度训练，以减少内存消耗并提高计算性能。
+            </li>
+            <li>
+             Megatron-DeepSpeed，它是在 Megatron 的基础上，结合了 DeepSpeed 技术的 NVIDIA 做的项目。它旨在进一步提高训练大规模 transformer 模型的性能。Megatron-DeepSpeed 采用了一种名为 ZeRO (Zero Redundancy Optimizer) 的内存优化技术，以降低内存占用并提高扩展性，提供了一些其他优化功能，如如梯度累积、、激活检查点等。
+            </li>
+            <li>
+             Colossal-AI 是一个用于大规模并行训练的统一深度学习系统。它提供了一系列的并行组件，让你可以用高效和可扩展的方式训练和部署大规模的 transformer 模型。它支持多种并行训练方法，如数据、管道、张量和序列并行，并与异构训练和零冗余优化器集成。与基线系统相比，Colossal-AI 可以在大规模模型上实现高达 2.76 倍 的训练加速。
+            </li>
+            <li>
+             ColossalChat，它是一个开源解决方案，用于克隆 ChatGPT 并使用完整的 RLHF (Reinforcement Learning with Human Feedback) 管道2。RLHF 是一种利用人类反馈来优化自然语言生成模型的方法。ColossalChat 可以实现更流畅、更有创意、更安全的对话生成。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/672448526" rel="nofollow">
+             使用DeepSpeed-Megatron-LM训练模型
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/633160974" rel="nofollow">
+             如何使用 Megatron-LM 训练语言模型
+            </a>
+            <br/>
+            <a href="https://github.com/hpcaitech/ColossalAI">
+             Colossal-AI
+            </a>
+           </p>
+           <h3>
+            <a id="2__344">
+            </a>
+            2. 推理服务框架
+           </h3>
+           <p>
+            有几个流行的推理服务框架可以用于训练和部署大规模的 transformer 模型，如 Llama 2、Vicuna、Alpaca 等。
+           </p>
+           <ul>
+            <li>
+             lmdeploy，它由上海人工智能实验室开发，推理使用 C++/CUDA，对外提供 python/gRPC/http 接口和 WebUI 界面，支持 tensor parallel 分布式推理、支持 fp16/weightint4/kv cache int8 量化。lmdeploy 支持 transformer 结构（例如 Llama 2、Vicuna 等），目前支持 fp16，int8 和 int4。
+            </li>
+            <li>
+             FasterTransformer，它由 NVIDIA 开发，采用 C++/CUDA 编写，支持分布式推理，transformer 编码器和解码器均可进行加速。FasterTransformer 可以在保持高精度的同时提高推理速度。
+            </li>
+            <li>
+             Llama.cpp 是一个用纯 C/C++ 实现的 LLM (Large Language Model) 的推理框架，它可以在各种平台和硬件上提供高效和可扩展的 LLM 模型推理。它支持多种量化、后端和模型格式，如 1.5-bit, 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, 和 8-bit 整数量化。它还提供了 Python 绑定和 Web UI。Llama.cpp 的主要目标是在 MacBook 上使用 4bit 量化来运行 Llama 模型。Llama 模型是 Meta 开发的一种基于 transformer 架构的大规模语言模型，它可以生成高质量的文本。Llama.cpp 可以在保持高精度的同时提高推理速度。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/659571962" rel="nofollow">
+             Llama2-Chinese项目：5-推理加速
+            </a>
+            <br/>
+            <a href="https://github.com/ggerganov/llama.cpp">
+             llama.cpp
+            </a>
+            <br/>
+            <a href="https://www.datacamp.com/tutorial/llama-cpp-tutorial" rel="nofollow">
+             Llama.cpp Tutorial: A Complete Guide to Efficient LLM Inference and Implementation
+            </a>
+           </p>
+           <h3>
+            <a id="3__353">
+            </a>
+            3. 推理加速框架
+           </h3>
+           <p>
+            推理加速框架是一些用于提高大规模语言模型（LLM）的推理性能和效率的工具和方法。它们通常利用了一些优化技术，如量化、并行化、缓存、内存管理等，来减少推理时间和资源消耗。一些推理加速框架的简要介绍如下：
+           </p>
+           <ul>
+            <li>
+             vLLM：一个用于高效推理 LLM 的 Python 库，它支持多种量化方法，如 1.5-bit, 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, 和 8-bit 整数量化。它还支持多种后端，如 PyTorch, TensorFlow, ONNX Runtime, 和 TensorRT1。vLLM 的吞吐量比 HuggingFace Transformers（HF）高 14x-24 倍，比 HuggingFace Text Generation Inference（TGI）高 2.2x-2.5 倍。
+            </li>
+            <li>
+             Text Generation Inference：一个用于文本生成推理的 Rust、Python 和 gRPC 服务框架。在 HuggingFace 的生产中使用，为 LLM 的 API 推理小部件提供支持3。它支持张量并行性、重复惩罚、温度缩放等多种推理选项3。它还使用了 Flash Attention 和 Paged Attention 来优化 transformer 的推理代码。
+            </li>
+            <li>
+             Lit-LLama：一个用于轻量级推理 LLM 的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了一种名为 Lit 的推理方法4。Lit 可以在保持高质量的同时，将 LLM 的推理速度提高 2.5 倍，内存占用降低 3.5 倍4。Lit-LLama 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             LightLLM：一个用于高效推理 LLM 的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了一种名为 Light 的推理方法5。Light 可以在保持高质量的同时，将 LLM 的推理速度提高 3.5 倍，内存占用降低 4.5 倍5。LightLLM 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             TensorRT-LLM：一个用于高性能推理 LLM 的 C++/CUDA 库，它基于 NVIDIA 的 TensorRT 框架实现了分布式推理和 transformer 的加速6。TensorRT-LLM 可以在保持高精度的同时，将 LLM 的推理速度提高 2.5 倍，内存占用降低 2 倍6。TensorRT-LLM 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             FastLLM：一个用于快速推理 LLM 的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了一种名为 Fast 的推理方法7。Fast 可以在保持高质量的同时，将 LLM 的推理速度提高 4 倍，内存占用降低 5 倍7。FastLLM 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             InferLLM：一个用于高效推理 LLM 的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了一种名为 Infer 的推理方法8。Infer 可以在保持高质量的同时，将 LLM 的推理速度提高 5 倍，内存占用降低 6 倍8。InferLLM 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             OpenPPL-LLM：一个用于高性能推理 LLM 的 C++/CUDA 库，它基于 OpenPPL 框架实现了分布式推理和 transformer 的加速。OpenPPL-LLM 可以在保持高精度的同时，将 LLM 的推理速度提高 3 倍，内存占用降低 3 倍。OpenPPL-LLM 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             DeepSpeed-FastGen：一个用于高吞吐量文本生成的 Python 库，它基于 DeepSpeed 框架实现了一种名为 MII (Memory Inference Interleaving) 的推理方法。MII 可以在保持高质量的同时，将 LLM 的推理速度提高 4 倍，内存占用降低 4 倍。DeepSpeed-FastGen 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             ExLLama：一个用于高效推理 LLM 的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了一种名为 Ex 的推理方法。Ex 可以在保持高质量的同时，将 LLM 的推理速度提高 6 倍，内存占用降低 7 倍。ExLLama 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+           </ul>
+           <p>
+            <a href="https://github.com/huggingface/text-generation-inference">
+             Text Generation Inference
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/647973148" rel="nofollow">
+             大模型部署推理方法汇总：以LLama2为例
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/653352979" rel="nofollow">
+             LLM推理部署（一）：LLM七种推理服务框架总结
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/642802585" rel="nofollow">
+             大模型推理加速工具：vLLM
+            </a>
+           </p>
+           <h3>
+            <a id="4__371">
+            </a>
+            4. 压缩框架
+           </h3>
+           <p>
+            压缩框架是一些用于减少大规模语言模型（LLM）的参数数量和内存占用的工具和方法。它们通常利用了一些优化技术，如量化、剪枝、蒸馏等，来提高模型的效率和可移植性。一些压缩框架的简要介绍如下：
+           </p>
+           <ul>
+            <li>
+             bitsandbytes：一个用于量化 LLM 的 Python 库，它支持多种量化方法，如 1.5-bit, 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, 和 8-bit 整数量化。它还支持多种后端，如 PyTorch, TensorFlow, ONNX Runtime, 和 TensorRT1。bitsandbytes 是最容易使用的量化框架之一，因为它不需要用输入数据校准量化模型（也称为零射击量化）。只要模型包含 torch.nn.Linear 模块，就可以对任何模型进行量化。
+            </li>
+            <li>
+             auto-gptq：一个用于量化 LLM 的 Python 库，它基于 GPTQ 算法实现了一种仅对权重进行量化的方法。它提供了一些友好的 API，让用户可以轻松地加载、推理和微调量化模型。auto-gptq 还提供了一些高效的推理内核，如 exllama、triton、marlin 等，可以显著提高推理速度和吞吐量。
+            </li>
+            <li>
+             auto-awq：一个用于量化 LLM 的 Python 库，它基于 AWQ 算法实现了一种对权重和激活进行量化的方法。它提供了一些友好的 API，让用户可以轻松地加载、推理和微调量化模型。auto-awq 还提供了一些高效的推理内核，如 exllama、triton、marlin 等，可以显著提高推理速度和吞吐量。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/666655711" rel="nofollow">
+             Transformers 中原生支持的量化方案概述
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/667109491" rel="nofollow">
+             大语言模型量化方法对比：GPTQ、GGUF、AWQ
+            </a>
+           </p>
+           <h3>
+            <a id="5_embedding_379">
+            </a>
+            5. embedding训练框架
+           </h3>
+           <p>
+            embedding 训练框架是一些用于训练和使用文本嵌入模型的工具和方法。文本嵌入模型可以将任意文本映射为低维稠密向量，以用于检索、分类、聚类或语义匹配等任务。两个 embedding 训练框架的简要介绍如下：
+           </p>
+           <ul>
+            <li>
+             sentence-transformers：一个用于训练和使用句子级别的嵌入模型的 Python 库，它基于 PyTorch 和 HuggingFace Transformers 实现了多种预训练和微调方法。它提供了一些友好的 API，让用户可以轻松地加载、推理和评估嵌入模型1。sentence-transformers 还提供了一些高效的推理内核，如 faiss、annoy、nmslib 等，可以显著提高检索速度和吞吐量。
+            </li>
+            <li>
+             FlagEmbedding：一个用于训练和使用多功能的嵌入模型的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了多种并行和优化方法。它提供了一些友好的 API，让用户可以轻松地加载、推理和微调嵌入模型2。FlagEmbedding 还提供了一些高效的推理内核，如 exllama、triton、marlin 等，可以显著提高推理速度和吞吐量。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/657056257" rel="nofollow">
+             [nlp] 语义模型：FlagEmbedding 理论
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/657722124" rel="nofollow">
+             [nlp] 语义模型 FlagEmbedding 实践
+            </a>
+            <br/>
+            <a href="https://github.com/FlagOpen/FlagEmbedding">
+             FlagEmbedding
+            </a>
+           </p>
+           <h3>
+            <a id="6__388">
+            </a>
+            6. 向量数据库
+           </h3>
+           <p>
+            向量数据库是一种用于存储和检索高维向量数据的数据库，它可以支持多种相似性度量和索引方法，以实现快速和准确的向量检索。向量数据库可以应用于多种场景，如图像搜索、语音识别、推荐系统、自然语言处理等。一些向量数据库的简要介绍如下：
+           </p>
+           <ul>
+            <li>
+             Faiss：Faiss 是由 Facebook 开发的一个用于稠密向量匹配的开源库，支持 C++ 和 Python 调用1。Faiss 支持多种向量检索方式，包括内积、欧氏距离等，同时支持精确检索和近似检索，以及 CPU 和 GPU 的计算。Faiss 可以处理百亿级别的向量数据，是向量检索领域的开山鼻祖。
+            </li>
+            <li>
+             pgvector：pgvector 是一个用于 PostgreSQL 的向量扩展，它可以将向量数据存储在 PostgreSQL 的表中，并使用倒排索引进行快速的向量检索。pgvector 支持多种相似性度量，如余弦相似度、欧氏距离、点积等，以及多种数据类型，如整数、浮点数、字节等。pgvector 可以处理千万级别的向量数据，是向量检索领域的新秀。
+            </li>
+            <li>
+             Milvus：Milvus 是一个开源的特征向量相似度搜索引擎，它集成了多种开源库，如 Faiss、SPTAG、Annoy 等，通过对数据和硬件算力的合理调度，以获得最优的搜索性能。Milvus 提供完整的向量数据更新、索引和查询框架，支持 CPU 和 GPU 的计算，以及单机和分布式的部署。Milvus 可以处理十亿级别的向量数据，是向量检索领域的领导者。
+            </li>
+            <li>
+             Pinecone：Pinecone 是一个云端的向量数据库服务，它提供了简单易用的 API 和仪表盘，让用户可以轻松地创建、管理和查询向量数据。Pinecone 支持多种相似性度量，如余弦相似度、欧氏距离、点积等，以及多种索引类型，如 IVF、NSG、HNSW 等。Pinecone 可以处理十亿级别的向量数据，是向量检索领域的创新者。
+            </li>
+            <li>
+             Weaviate：Weaviate 是一个开源的语义向量数据库，它可以将任意类型的数据转换为语义向量，并使用上下文相关的查询进行智能的向量检索。Weaviate 支持多种数据源，如 JSON、GraphQL、RESTful API 等，以及多种数据格式，如文本、图像、视频、音频等。Weaviate 可以处理千万级别的向量数据，是向量检索领域的探索者。
+            </li>
+            <li>
+             LanceDB：LanceDB 是一个用于高效推理 LLM (Large Language Model) 的 Python 库，它基于 PyTorch 和 ONNX Runtime 实现了一种名为 Lance 的推理方法。Lance 可以在保持高质量的同时，将 LLM 的推理速度提高 6 倍，内存占用降低 7 倍。LanceDB 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+            <li>
+             Chroma：Chroma 是一个用于高性能推理 LLM 的 C++/CUDA 库，它基于 NVIDIA 的 TensorRT 框架实现了分布式推理和 transformer 的加速。Chroma 可以在保持高精度的同时，将 LLM 的推理速度提高 3 倍，内存占用降低 3 倍。Chroma 支持 Llama 2、Vicuna、Alpaca 等多种 LLM 模型。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/364923722" rel="nofollow">
+             笔记︱几款多模态向量检索引擎：Faiss 、milvus、Proxima、vearch、Jina等
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/625807445" rel="nofollow">
+             AI向量数据库【Top 10】
+            </a>
+           </p>
+           <h3>
+            <a id="7__400">
+            </a>
+            7. 应用框架
+           </h3>
+           <p>
+            LLM 应用框架是指基于语言模型的应用程序设计和开发的架构。不同的 LLM 应用框架可能有不同的特点和优势，例如推理速度、可扩展性、灵活性等。根据您的需求和场景，您可以选择合适的 LLM 应用框架来实现您想要的功能。
+           </p>
+           <ul>
+            <li>
+             AutoGPT 是一个自定义代理，它使用长期记忆以及为为独立工作（即不需要用户输入）设计的提示来执行任务。它可以用于预测给定位置的天气1，或者其他需要生成文本或图像的场景。
+            </li>
+            <li>
+             LangChain 是一个用于构建生成式代理的框架，它支持使用不同的语言模型（LLM）和自定义工具。它可以用于创建智能客服、文本摘要、对话系统等。
+            </li>
+            <li>
+             LlamaIndex (原名 GPT Index) 是一个数据框架，用于您的 LLM 应用。它可以帮助您快速地构建和训练 LLM，并提供了一些集成（或插件），以实现不同的功能，如文本分类、问答、摘要等。
+            </li>
+            <li>
+             XAgent 是一个基于 XAI（可解释人工智能）的生成式代理框架，它可以在不损失质量的情况下生成更可信、更可理解的文本或图像。它可以用于创建新闻报道、故事、诗歌等创意内容。
+            </li>
+            <li>
+             MetaGPT 是一个基于 GPT-3 的元学习框架，它可以在多个 LLM 上进行迁移学习，并根据不同的任务类型进行微调。它可以用于提高 LLM 的泛化能力和适应性。
+            </li>
+            <li>
+             AutoGen 是一个支持使用多个代理来开发 LLM 应用程序的框架，这些代理可以相互对话来解决任务。 AutoGen 代理是可定制的、可对话的，并且无缝地允许人类参与。 他们可以采用LLM、人力投入和工具组合的各种模式运作。
+            </li>
+            <li>
+             Chameleon的核心在于通过LLM规划器生成自然语言程序，找到最佳工具组合，以达到精确推理的目的。该框架在科学问答任务和表格数学推理任务上表现卓越，特别是在表格数学推理任务上，准确率达到了惊人的98.78%。其工具箱支持LLM模型、视觉模型、网络搜索引擎、Python函数以及基于规则的模块，实现了多种工具之间的自然语言通信。相较于现有工作，Chameleon模型允许以类似自然语言的方式生成不同工具的调用组合，无需复杂的程序设计，增加了用户友好性。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/645968550" rel="nofollow">
+             AutoChain —轻量级且可测试的 LangChain 替代品
+            </a>
+            <br/>
+            <a href="https://github.com/Significant-Gravitas/AutoGPT">
+             AutoGPT: build &amp; use AI agents
+            </a>
+            <br/>
+            <a href="https://github.com/run-llama/llama_index">
+             LlamaIndex
+            </a>
+            <br/>
+            <a href="https://python.langchain.com/docs/get_started/introduction" rel="nofollow">
+             Langchain
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/651151321" rel="nofollow">
+             一文详解最热的 LLM 应用框架 LangChain
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/636080096" rel="nofollow">
+             使用 OpenAI、LangChain 和 LlamaIndex 构建自己的 DevSecOps 知识库
+            </a>
+           </p>
+           <h3>
+            <a id="8__416">
+            </a>
+            8. 前端
+           </h3>
+           <p>
+            Python 前端框架是指用 Python 语言开发 Web 应用的工具和方法。在机器学习领域，有两个流行的 Python 前端框架，分别是 Streamlit 和 Gradio。它们都可以快速构建和部署机器学习模型的交互式 Web 应用，但有不同的特点和适用场景。
+           </p>
+           <ul>
+            <li>
+             Streamlit 是一个基于 React 的开源框架，它提供了简单易用的 API 和丰富的组件，可以让开发者轻松地将数据据脚本转换为可分享的 Web 应用。Streamlit 的优势在于可扩展性，相比 Gradio 复杂，完全全熟练使用需要一定时间。适合场景相对复杂，想要构建丰富多样交互页面的开发者。
+            </li>
+            <li>
+             Gradio 是一个专注于简化机器学习模型部署的开源框架，它强调易用性和可访问性，使即使非技术用户也能与复杂模型进行交互。Gradio 的优势在于易用性，代码结构相比 Streamlit 简单，只需简单定义输入和输出接口即可快速构建简单的交互页面，更轻松部署模型。适合场景相对简单，想要快速部署应用的开发者。
+            </li>
+           </ul>
+           <p>
+            <a href="https://zhuanlan.zhihu.com/p/611828558" rel="nofollow">
+             快速生成 AI 应用的框架对比：Gradio、Streamlit 和 Dash
+            </a>
+            <br/>
+            <a href="https://zhuanlan.zhihu.com/p/624712372" rel="nofollow">
+             Gradio入门到进阶全网最详细教程[一]：快速搭建AI算法可视化部署演示(侧重项目搭建和案例分享)
+            </a>
+            <br/>
+            <a href="https://cloud.tencent.com/developer/news/1028014" rel="nofollow">
+             Streamlit和Gradio快速构建和部署机器学习模型的交互式应用
+            </a>
+           </p>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>

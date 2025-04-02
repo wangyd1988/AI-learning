@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://blog.csdn.net/lhx17673139267/article/details/140685087" rel="canonical"/>
+  <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+  <meta content="webkit" name="renderer">
+   <meta content="webkit" name="force-rendering">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+    <meta content="always" name="referrer"/>
+    <meta content="no-siteapp" http-equiv="Cache-Control">
+     <link href="#" media="handheld" rel="alternate"/>
+     <meta content="pc" name="applicable-device"/>
+     <link href="https://g.csdnimg.cn/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon"/>
+     <title>
+      大模型的开发训练与推理部署白皮书 2024_推荐大模型部署推理的课程-CSDN博客
+     </title>
+     <meta content="推荐大模型部署推理的课程" name="keywords"/>
+     <meta content='{"autorun":true,"install":true,"keyword":"大模型推理"}' name="csdn-baidu-search"/>
+     <meta content="文章浏览阅读1.6k次，点赞28次，收藏20次。随着参数规模和网络结构复杂性的不断提升，大模型开发、训练和推理部署所面临的挑战愈发严峻，其研发依赖算法、算力和数据的综合支撑。**深度学习框架及配套工具为大模型的生产和应用提供了基础支撑，涉及开发、训练、压缩、推理和服务等多个环节。**此外，通过深度学习框架还可以实现与硬件的适配和协同优化，进一步提升硬件的计算和推理性能，降低大模型开发和应用的成本。由于大模型参数规模大，计算和存储的需求显著增加，与辨别式AI 模型相比，非常依赖分布式技术提升效率。_推荐大模型部署推理的课程" name="description"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/detail_enter-af0ead44cd.min.css" rel="stylesheet" type="text/css"/>
+     <link href="https://csdnimg.cn/release/blogv2/dist/pc/themesSkin/skin-sea/skin-sea-d3a08c2048.min.css" rel="stylesheet" type="text/css"/>
+     <meta content='{"type":"0","fixModel":"1"}' name="toolbar"/>
+     <link href="https://csdnimg.cn/public/sandalstrap/1.4/css/sandalstrap.min.css" rel="stylesheet" type="text/css"/>
+     <style>
+      .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+     </style>
+    </meta>
+   </meta>
+  </meta>
+  <style type="text/css">
+   * { user-select: text; } pre{max-height: none!important; overflow-y: hidden;}
+  </style>
+ </head>
+ <body class="nodata" style="">
+  <link href="https://csdnimg.cn/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css" rel="stylesheet"/>
+  <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css" rel="stylesheet">
+   <link href="https://g.csdnimg.cn/lib/swiper/6.0.4/css/swiper.css" rel="stylesheet">
+    <div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;">
+     <div class="container clearfix container-concision" id="mainBox">
+      <main>
+       <div class="blog-content-box">
+        <div class="article-header-box">
+         <div class="article-header">
+          <div class="article-title-box">
+           <h1 class="title-article" id="articleContentId">
+            大模型的开发训练与推理部署白皮书 2024
+           </h1>
+          </div>
+          <div class="article-info-box">
+           <div class="article-bar-top">
+            <img alt="" class="article-type-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/original.png"/>
+            <div class="bar-content">
+             <a class="article-vip-box" data-report-click='{"spm":"3001.10404"}' data-report-query="spm=3001.10404" data-report-view='{"spm":"3001.10404"}' href="https://mall.csdn.net/vip" target="_blank">
+              <img alt="" class="article-vip-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/identityVipNew.png"/>
+             </a>
+             <a class="follow-nickName" href="https://blog.csdn.net/lhx17673139267" rel="noopener" target="_blank" title="AI大模型 lose and dream">
+              AI大模型 lose and dream
+             </a>
+             <img alt="" class="article-time-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newCurrentTime2.png"/>
+             <span class="time">
+              于 2024-07-25 11:22:20 发布
+             </span>
+             <div class="read-count-box">
+              <img alt="" class="article-read-img article-heard-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/articleReadEyes2.png"/>
+              <span class="read-count">
+               阅读量1.6k
+              </span>
+              <a class="un-collection" data-report-click='{"mod":"popu_823","spm":"1001.2101.3001.4232","ab":"new"}' id="blog_detail_zk_collection">
+               <img alt="" class="article-collect-img article-heard-img un-collect-status isdefault" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollect2.png" style="display:inline-block"/>
+               <img alt="" class="article-collect-img article-heard-img collect-status isactive" src="https://csdnimg.cn/release/blogv2/dist/pc/img/tobarCollectionActive2.png" style="display:none"/>
+               <span class="name">
+                收藏
+               </span>
+               <span class="get-collection">
+                20
+               </span>
+              </a>
+              <div class="read-count-box is-like">
+               <img alt="" class="article-read-img article-heard-img" id="is-like-imgactive-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Active.png" style="display:none"/>
+               <img alt="" class="article-read-img article-heard-img" id="is-like-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/newHeart2023Black.png" style="display:block"/>
+               <span class="read-count" id="blog-digg-num">
+                点赞数
+                            28
+               </span>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div class="blog-tags-box">
+            <div class="tags-box artic-tag-box">
+             <span class="label">
+              文章标签：
+             </span>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"分类","ab":"new","extra":"{\"searchword\":\"分类\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"分类","ab":"new","extra":"{\"searchword\":\"分类\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E5%88%86%E7%B1%BB&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              分类
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"数据挖掘","ab":"new","extra":"{\"searchword\":\"数据挖掘\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"数据挖掘","ab":"new","extra":"{\"searchword\":\"数据挖掘\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E6%95%B0%E6%8D%AE%E6%8C%96%E6%8E%98&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              数据挖掘
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"人工智能","ab":"new","extra":"{\"searchword\":\"人工智能\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              人工智能
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"开发语言","ab":"new","extra":"{\"searchword\":\"开发语言\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"开发语言","ab":"new","extra":"{\"searchword\":\"开发语言\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              开发语言
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"语言模型","ab":"new","extra":"{\"searchword\":\"语言模型\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              语言模型
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"神经网络","ab":"new","extra":"{\"searchword\":\"神经网络\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"神经网络","ab":"new","extra":"{\"searchword\":\"神经网络\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              神经网络
+             </a>
+             <a class="tag-link" data-report-click='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' data-report-query="spm=1001.2101.3001.4223" data-report-view='{"mod":"popu_626","spm":"1001.2101.3001.4223","strategy":"自然语言处理","ab":"new","extra":"{\"searchword\":\"自然语言处理\"}"}' href="https://so.csdn.net/so/search/s.do?q=%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" rel="noopener" target="_blank">
+              自然语言处理
+             </a>
+            </div>
+           </div>
+           <div class="slide-content-box">
+            <div class="article-copyright">
+             <div class="creativecommons">
+              版权声明：本文为博主原创文章，遵循
+              <a href="http://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
+               CC 4.0 BY-SA
+              </a>
+              版权协议，转载请附上原文出处链接和本声明。
+             </div>
+             <div class="article-source-link">
+              本文链接：
+              <a href="https://blog.csdn.net/lhx17673139267/article/details/140685087" target="_blank">
+               https://blog.csdn.net/lhx17673139267/article/details/140685087
+              </a>
+             </div>
+            </div>
+           </div>
+           <div class="operating">
+            <a class="href-article-edit slide-toggle">
+             版权
+            </a>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div id="blogHuaweiyunAdvert">
+        </div>
+        <article class="baidu_pl">
+         <div class="article_content clearfix" id="article_content">
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-704d5b9767.css" rel="stylesheet"/>
+          <div class="markdown_views prism-atom-one-dark" id="content_views">
+           <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+           </svg>
+           <p>
+            <strong>
+             1. 大模型的开发训练与推理部署
+            </strong>
+           </p>
+           <p>
+            随着参数规模和网络结构复杂性的不断提升，大模型开发、训练和推理部署所面临的挑战愈发严峻，其研发依赖算法、算力和数据的综合支撑。**深度学习框架及配套工具为大模型的生产和应用提供了基础支撑，涉及开发、训练、压缩、推理和服务等多个环节。**此外，通过深度学习框架还可以实现与硬件的适配和协同优化，进一步提升硬件的计算和推理性能，降低大模型开发和应用的成本。
+           </p>
+           <p>
+            <strong>
+             1.1 大模型开发与训练
+            </strong>
+           </p>
+           <p>
+            由于大模型参数规模大，计算和存储的需求显著增加，与辨别式AI 模型相比，非常依赖分布式技术提升效率。因此，大模型开发的挑战集中体现在基于深度学习框架对各类分布式并行策略进行本地化配置。**为了支持各种分布式并行策略，需要有一套简单、灵活、高效且易于使用的框架和工具界面，使用户可以快捷地进行模型训练和调优，并方便地配置和管理大规模的并行任务。**大模型开发也离不开高效的调试工具及方法支撑，非常依赖动态图的调试机制、清晰的调试日志和可视化的调试界面等，帮助开发人员更好地分析模型的行为和表现。
+           </p>
+           <p>
+            大模型的高性能训练旨在通过对模型计算、显存、内存和通信的系统级优化，在保证模型收敛性的前提下，提高训练吞吐量，实现在有限资源下大模型高效训练的目的。
+           </p>
+           <p>
+            <strong>
+             系统级优化方法主要从两个方向实现：
+            </strong>
+           </p>
+           <p>
+            **一是设备内优化方法，**包括降低浮点数的冗余表示的半精度浮点优化、混合精度浮点优化等方法、降低梯度计算过程中冗余表示的梯度检查点（ Checkpointing ） 方 法 ， 以 及 内 存 优 化 的ZeRO-Offload方法，即通过将数据和计算从 GPU 卸载到 CPU，以减少神经网络训练期间 GPU 内存占用的方法。
+           </p>
+           <p>
+            <strong>
+             二是多设备优化方法
+            </strong>
+            ，也称分布式优化，即将分布在不同计算节点上的多个 GPU 一起用于训练单个模型，这类方法主要有数据并行、张量并行、流水线并行、分组参数切片并行等多种并行加速策略，下面进行重点介绍。
+           </p>
+           <p>
+            **数据并行：**数据并行是每个处理器存储全量的模型参数、梯度和优化器状态，但读取不同的输入数据，在反向计算出参数梯度后，对参数梯度做 AllReduce 聚合，然后每个处理器独立进行参数更新。数据并行的优点是实现和使用方式简单，可以通过增加数据并行路数提高训练吞吐，是目前最为常用的分布式并行策略之一。
+           </p>
+           <p>
+            **张量并行：**张量并行是将神经网络中同一层的张量运算拆分成多个独立的子运算，并相应地对模型参数做切分，由不同的处理器分别执行，生成的中间结果通过分布式通信进行组合。张量并行的优点是可以充分利用多核处理器的计算能力，减少了内存访问的延迟，但需要设计高效的并行算法和通信机制来确保计算的正确性和高效性，避免通信延迟和带宽瓶颈。
+           </p>
+           <p>
+            **流水线并行：**这种并行策略是将神经网络中的不同层交由不同处理器执行，上下游执行器之间的数据依赖点对点通信传输。基于此技术的高效流水线并行调度策略，支持 1F1B、Interleaving 1F1B 等高效调度算法，并通过“通信-计算”重叠的方式隐藏通信时间，提高整体训练效率。
+           </p>
+           <p>
+            **分组参数并行：**这种并行策略是一种特殊的数据并行方式，它可以将优化器状态、参数梯度和模型参数切分到不同的处理器上，达到节省大模型显存的目的。分组参数并行的优点是可以有效降低模型显存占用，通过增加数据并行路数提高整体训练吞吐。基于此技术的“组内参数切片+组间数据”并行，可以更合理地分配机内和机间的通信带宽，进一步提升了训练性能。
+           </p>
+           <p>
+            <strong>
+             基于上述基础并行策略，不同深度学习框架的实现方法不同，有的是基于 PyTorch 进行进一步封装形成单独的工具，如微软的DeepSpeed-Megatron、NVIDIA 的 Megatron-LM、清华大学的 BMTrain 等；飞桨 PaddePaddle 框架支持四维混合并行技术，可将基础的并行策略组合使用。
+            </strong>
+           </p>
+           <p>
+            在多维混合并行训练策略的基础上，为了应对模型多样性和训练硬件资源异构性，进一步发展出了端到端自适应分布式训练架构。
+           </p>
+           <p>
+            <img alt="" src="https://i-blog.csdnimg.cn/blog_migrate/02962aabdd74d604619eecd568a74a96.png"/>
+           </p>
+           <p>
+            <strong>
+             图 1-1 端到端自适应分布式训练架构
+            </strong>
+           </p>
+           <p>
+            该架构可以针对不同的深度学习算法抽象成统一的计算视图，自动感知硬件环境并抽象成统一的异构资源视图；采用了代价模型对两者进行联合建模；将模型参数、梯度和优化器状态按照最优策略分配到不同的设备上，构建流水线进行异步高效执行。
+           </p>
+           <p>
+            <strong>
+             对于同地域或跨地域多种异构硬件，可以实现节省存储、负载均衡、提升训练性能的目的。此外，针对大模型训练资源不稳定的问题，设计了弹性资源调度管理机制。
+            </strong>
+           </p>
+           <p>
+            当资源发生变化时，能够自动的感知硬件环境并修正资源视图，重新触发模型切分放置策略选择及异步流水线执行，使得硬件故障下任务恢复可从小时级降至秒级。
+           </p>
+           <p>
+            <strong>
+             1.2 大模型推理部署
+            </strong>
+           </p>
+           <p>
+            大模型推理往往面临显存占用过多、计算规模庞大、输入输出变长等挑战，这些也是大模型应用落地要重点解决的问题。
+           </p>
+           <p>
+            <img alt="" src="https://i-blog.csdnimg.cn/blog_migrate/b718ee7da15ea362ed4446e220801b19.png"/>
+           </p>
+           <p>
+            <strong>
+             图 1-2 模型压缩、推理引擎、服务部署三个环节协同优化
+            </strong>
+           </p>
+           <p>
+            在充分考虑大模型结构特性基础上，可以从模型压缩、推理引擎、服务部署三个关键环节，开展全方位的协同优化，在降低时延提升用户体验的同时，最大化提升服务吞吐，做到低时延、高吞吐。
+           </p>
+           <p>
+            <strong>
+             大模型的推理可以采用深度学习框架直接实现，通过框架和模型协同优化，可以显著提升大模型的推理效率；也可以采用专门的工具，如：FasterTransformer、TensorRT-LLM、vLLM、Text Genertion Inference、HuggingFace TG 等实现，这些工具已经针对大模型推理进行了优化，能够高效地完成推理任务。大模型推理效率的提升，不仅可以提升用户体验，还能显著降低开发成本，有利于大模型在千行百业的广泛应用。
+            </strong>
+           </p>
+           <p>
+            产业界非常重视大模型推理性能的优化，如 ChatGPT组建了专门的优化团队，优化其在线推理的成本；再如百度文心一言，通过与飞桨协同优化，推理性能提升 30 多倍；腾讯混元大模型，通过太极机器学习平台的压缩和分布式推理，资源设备占用减少 40%。
+           </p>
+           <p>
+            1.3 大模型压缩
+           </p>
+           <p>
+            在大模型压缩方面，常规的模型压缩方法有模型稀疏化、权重矩阵分解、模型参数共享、蒸馏和量化。
+           </p>
+           <p>
+            **模型稀疏化：**这种方法通过将模型中的某些神经元、连接或层置为零，从而达到压缩模型、加速训练、减少内存消耗等目的。
+           </p>
+           <p>
+            **权重矩阵分解：**使用包括奇异值分解（SVD）等矩阵分解方法对预训练模型的 Feed-Forward Network（FFN）层的权重矩阵进行分解，从而减少 Attention 层的参数量，提高模型的效率。
+           </p>
+           <p>
+            **模型参数共享：**部分大型模型如 ALBERT采用了权重共享的方式，特定层之间共享参数，从而减少了模型的参数量。蒸馏：通过使用学生模型来模拟预训练教师模型的行为来减小模型大小的技术。
+           </p>
+           <p>
+            通常情况下，学生模型由更小的神经网络或线性模型组成。蒸馏的过程是将教师模型的知识转移到学生模型，使学生模型在保持较小规模的同时，能够保持类似于教师模型的预测能力。利用蒸馏技术可以将大模型的知识和泛化能力迁移到小型网络，以支持轻量化的大模型部署。
+           </p>
+           <p>
+            **量化：**量化是一种将预训练模型中的权重从浮点数转换为低位数的技术。通常情况下，量化的精度可被降低到 8 位或更低。量化可以大大减少模型的存储空间和计算量，但可能会对模型的性能产生一定的影响。
+           </p>
+           <p>
+            目前量化技术在大模型压缩时被广泛应用，然而很多量化算法难以做到模型效果无损，主要是因为大模型存在激活分布异常值较大，难以量化的问题。自适应 Shift-SmoothQuant 大模型量化方法可以使激活分布更加平滑，提升量化效果。
+           </p>
+           <p>
+            <strong>
+             此外，对于超大模型精度无损的压缩，可以采用多策略组合压缩方案。通过组合使用模型稀疏化、蒸馏和参数共享等压缩技术，可以在精度无损的情况下，将模型参数量压缩至百分之一、甚至千分之一左右。例如，组合使用低比特量化和模型稀疏化，同时从数值和结构两个维度对大模型的冗余信息进行精简，协同优化计算和访存算子，可以进一步提高压缩率。
+            </strong>
+           </p>
+           <p>
+            1.4 大模型推理与服务部署
+           </p>
+           <p>
+            在推理引擎方面，通用的技术是使用自动计算图融合优化和自动混合并行推理，实现对模型结构和计算硬件的自动感知（Automated Hardware Awareness），协同优化模型推理效率。自动计算图融合优化：以非侵入的方式自动匹配高性能融合算子，通过降低算子数量、减少访存次数，获得自动化推理加速能力。
+           </p>
+           <p>
+            **自动混合并行推理：**通过自动感知部署硬件的存储、带宽、算力等特性，对模型进行自适应切分，将大模型切分到多个部署硬件上,进行分布式并行推理，尽可能减少卡间通信和跨机通信数据量，从而实现如百亿、千亿参数模型推理部署。
+           </p>
+           <p>
+            除了上述技术外，推理引擎的优化还可以协同模型压缩，研发符合大模型特点的量化推理方案。例如，语言大模型的上下文计算阶段属于计算密集型，而 Token Generation 阶段则属于访存密集型。
+           </p>
+           <p>
+            <strong>
+             针对这种计算特点，可以通过协同硬件开展优化，研发 LLM.INT8()和 Weight Only 量化混合的推理方案。这种方案能够快速进行量化，并且具有较高的精度，尤其对访存受限的场景，也拥有较好的效果。
+            </strong>
+           </p>
+           <p>
+            在服务化调度协同方面，针对生成式模型计算过程中，同一批次输入输出长度不一致带来的计算效率不高问题，通过变长优化降低计算量，并引入输入动态插入批处理技术，可以大幅提升硬件的计算资源利用率，从而提升整体服务的吞吐量。
+           </p>
+           <p>
+            动态插入批处理技术具有感知负载的能力，能够在一个请求生成完成之后，及时快速地插入新的请求，结合输入、输出长度的动态变化，有效提升 GPU 资源的利用效率，减少用户的等待时延。
+           </p>
+           <p>
+            <strong>
+             1.5 软硬件适配与协同优化
+            </strong>
+           </p>
+           <p>
+            **目前国际上主要的大模型训练芯片有英伟达 GPU，如 H100、A100，以及谷歌的 TPU（Tensor Processing Unit），国内主要有华为昇腾 NPU、昆仑芯 XPU、海光 DCU、寒武纪 MLU 等，其架构和性能规格各不相同。**大模型除了对训练芯片的计算性能有一定的要求外，还对硬件的规格，如显存大小、访存带宽和通信带宽具有较高的要求。
+           </p>
+           <p>
+            为实现大模型的高效训练和推理，需要通过深度学习框架实现与硬件的适配和深度协同优化，通过低成本、高效率的硬件适配方案，提升大模型与硬件的适配效率，并通过混合精度、显存复用、融合优化等软硬件协同优化技术，结合硬件特性实现系统级优化。
+           </p>
+           <p>
+            <strong>
+             1.6 大模型的软硬件适配
+            </strong>
+           </p>
+           <p>
+            深度学习框架需要提供标准化的硬件适配开发接口，以对接异构硬件。针对不同 AI 芯片在指令集、开发语言、加速库、计算图引擎、运行时环境、通信库等方面的差异，需根据 AI 芯片的技术栈提供差异化的硬件接入方式，配涉及算子适配、通信库适配、设备驱动适配等多个方面。
+           </p>
+           <p>
+            在算子适配方面，有如下两种方式：算子映射：框架算子库对接硬件算子库，提供单算子粒度级别的接入方式，并交由框架执行器进行算子库接口的调用和执行，适用底层硬件 SDK 支持硬件算子库。
+           </p>
+           <p>
+            **算子开发：**芯片厂商在其软件栈提供一套完善的高级开发语言，如 NVIDIA 的 CUDA C 开发语言，然后深度学习框架通过高级开发语言实现算子代码的开发。其优点是比较通用，可以支持大量算子的开发，缺点在于提供高级语言开发环境，对于芯片公司来说有较大的研发难度和成本。
+           </p>
+           <p>
+            **神经网络编译器接入：**通过深度学习框架中的神经网络编译器中间表示（Intermediate Representation，IR）对接硬件的代码生成器（Codegen），提供编译器 IR 到底层硬件 IR 的转化，交由编译器进行算子融合和调度，适用底层硬件 SDK 支持代码生成的硬件。
+           </p>
+           <p>
+            <strong>
+             1.7 大模型的软硬件协同优化
+            </strong>
+           </p>
+           <p>
+            为了进一步提升大模型在硬件上的运行效率，深度学习框架在显存优化、计算加速和通信优化三个环节需要提供相应的优化技术。在显存优化方面，框架支持多层显存复用、重计算和低比特量化等技术，降低大模型对硬件显存的要求；
+           </p>
+           <p>
+            <strong>
+             在计算加速方面
+            </strong>
+            ，框架支持混合精度、算子融合优化等技术，并通过接入硬件 Transformer 大算子库，针对生成式大模型进行深度融合优化，提升大模型性能；
+           </p>
+           <p>
+            <strong>
+             在通信优化方面
+            </strong>
+            ，框架支持自适应的通信拓扑优化技术，可感知硬件集群环境的配置，搜索最优并行策略，支持大模型在不同规模集群下的高效训练，提升模型性能的同时，降低开发者配置高效大模型训练的门槛。
+           </p>
+           <p>
+            <strong>
+             硬件加速
+            </strong>
+            是大模型高效计算的另一种关键技术，硬件加速通过使用专用硬件来优化神经网络计算，以达到更高的性能和效率。
+           </p>
+           <p>
+            例如，TPU（Tensor Processing Unit）硬件加速技术，与通用的 CPU 和 GPU不同，TPU 专门为深度学习计算进行了定制化优化，以满足大规模模型训练的特殊需求。
+           </p>
+           <p>
+            ASIC（Application-Specific Integrated Circuit）加速是另一种硬件加速的方案，它是一种定制化的集成电路，专门为某个特定应用场景而设计制造。
+           </p>
+           <p>
+            ASIC 的优势在于能够实现高度优化的电路结构和算法，从而提高性能和能效。除了 ASIC，FPGA（Field-Programmable Gate Array）加速也是一种重要的硬件加速技术。
+           </p>
+           <p>
+            FPGA 是一种可编程逻辑芯片，它可以通过编程方式实现不同的逻辑电路，具有高度灵活性和可编程性。FPGA 通常由大量的逻辑单元和存储单元组成，可以实现基本的布尔逻辑运算和算术运算，并可以与其他电路和设备进行通信。
+           </p>
+           <p>
+            另外，云服务也为大模型训练提供了强大的计算能力和存储资源。云服务提供商如 AWS、Azure、Google Cloud，以及百度智能云、阿里云、腾讯云、华为云等，提供了丰富的深度学习服务和工具，包括模型训练、模型部署和自动缩放等。这些云服务可以根据用户的实际需求和流量变化，灵活调整计算资源的规模和配置，以提供高效、可靠的服务。
+           </p>
+           <p>
+            <strong>
+             综上，大模型对软硬件协同优化提出了更好的要求，一方面需要对已经硬件进行全面适配，另一方面需要开展极致的软硬件协同优化，才能有效支撑大模型的研发和广泛应用。
+            </strong>
+           </p>
+           <h4>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501_122">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+           </h4>
+           <h3>
+            <a id="LLM__124">
+            </a>
+            如何系统的去学习大模型LLM ？
+           </h3>
+           <p>
+            作为一名热心肠的互联网老兵，我意识到有很多经验和知识值得分享给大家，也可以通过我们的能力和经验解答大家在人工智能学习中的很多困惑，所以在工作繁忙的情况下还是坚持各种整理和分享。
+           </p>
+           <p>
+            但苦于知识传播途径有限，很多互联网行业朋友无法获得正确的资料得到学习提升，故此将并将
+            <strong>
+             重要的
+             <code>
+              AI大模型资料
+             </code>
+             包括AI大模型入门学习思维导图、精品AI大模型学习书籍手册、视频教程、实战学习等录播视频免费分享出来
+            </strong>
+            。
+           </p>
+           <p>
+            所有资料 ⚡️ ，朋友们如果有需要全套 《
+            <strong>
+             LLM大模型入门+进阶学习资源包
+            </strong>
+            》，
+            <strong>
+             扫码获取~
+            </strong>
+           </p>
+           <blockquote>
+            <p>
+             👉[CSDN大礼包🎁：全网最全《LLM大模型入门+进阶学习资源包》免费分享]👈
+            </p>
+           </blockquote>
+           <p>
+            ​
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/0b6902ca4de14366842ff40029b7d70b.png#pic_center"/>
+           </p>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm1001201430015502AGI_136">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            一、全套AGI大模型学习路线
+           </h6>
+           <p>
+            <strong>
+             AI大模型时代的学习之旅：从基础到前沿，掌握人工智能的核心技能！
+            </strong>
+           </p>
+           <p>
+            <img alt="img" src="https://i-blog.csdnimg.cn/blog_migrate/88364745a21655bfcd37f027c18079f5.png"/>
+           </p>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm1001201430015502640AI_142">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            二、640套AI大模型报告合集
+           </h6>
+           <p>
+            这套包含640份报告的合集，涵盖了AI大模型的理论研究、技术实现、行业应用等多个方面。无论您是科研人员、工程师，还是对AI大模型感兴趣的爱好者，这套报告合集都将为您提供宝贵的信息和启示。
+           </p>
+           <p>
+            <img alt="img" src="https://i-blog.csdnimg.cn/blog_migrate/65b8d4a2456d7e87091dd30dd77b9506.png"/>
+           </p>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm1001201430015502AIPDF_148">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            三、AI大模型经典PDF籍
+           </h6>
+           <p>
+            随着人工智能技术的飞速发展，AI大模型已经成为了当今科技领域的一大热点。这些大型预训练模型，如GPT-3、BERT、XLNet等，以其强大的语言理解和生成能力，正在改变我们对人工智能的认识。 那以下这些PDF籍就是非常不错的学习资源。
+           </p>
+           <p>
+            <img alt="img" src="https://i-blog.csdnimg.cn/blog_migrate/f24835641125fd8514ca947213ceb376.png"/>
+           </p>
+           <p>
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/6dc8339ddab345db9e2f603dd0642f1e.png#pic_center"/>
+           </p>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm1001201430015502AI_156">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            四、AI大模型商业化落地方案
+           </h6>
+           <p>
+            <img alt="img" src="https://i-blog.csdnimg.cn/blog_migrate/f0f3a6d06d3f05c037af554a955041ee.png"/>
+           </p>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm10012014300155021AI_160">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            阶段1：AI大模型时代的基础理解
+           </h6>
+           <ul>
+            <li>
+             <strong>
+              目标
+             </strong>
+             ：了解AI大模型的基本概念、发展历程和核心原理。
+            </li>
+            <li>
+             <strong>
+              内容
+             </strong>
+             ：
+             <ul>
+              <li>
+               L1.1 人工智能简述与大模型起源
+              </li>
+              <li>
+               L1.2 大模型与通用人工智能
+              </li>
+              <li>
+               L1.3 GPT模型的发展历程
+              </li>
+              <li>
+               L1.4 模型工程
+               <br/>
+               - L1.4.1 知识大模型
+               <br/>
+               - L1.4.2 生产大模型
+               <br/>
+               - L1.4.3 模型工程方法论
+               <br/>
+               - L1.4.4 模型工程实践
+              </li>
+              <li>
+               L1.5 GPT应用案例
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm10012014300155022AIAPI_174">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            阶段2：AI大模型API应用开发工程
+           </h6>
+           <ul>
+            <li>
+             <strong>
+              目标
+             </strong>
+             ：掌握AI大模型API的使用和开发，以及相关的编程技能。
+            </li>
+            <li>
+             <strong>
+              内容
+             </strong>
+             ：
+             <ul>
+              <li>
+               L2.1 API接口
+               <br/>
+               - L2.1.1 OpenAI API接口
+               <br/>
+               - L2.1.2 Python接口接入
+               <br/>
+               - L2.1.3 BOT工具类框架
+               <br/>
+               - L2.1.4 代码示例
+              </li>
+              <li>
+               L2.2 Prompt框架
+               <br/>
+               - L2.2.1 什么是Prompt
+               <br/>
+               - L2.2.2 Prompt框架应用现状
+               <br/>
+               - L2.2.3 基于GPTAS的Prompt框架
+               <br/>
+               - L2.2.4 Prompt框架与Thought
+               <br/>
+               - L2.2.5 Prompt框架与提示词
+              </li>
+              <li>
+               L2.3 流水线工程
+               <br/>
+               - L2.3.1 流水线工程的概念
+               <br/>
+               - L2.3.2 流水线工程的优点
+               <br/>
+               - L2.3.3 流水线工程的应用
+              </li>
+              <li>
+               L2.4 总结与展望
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm10012014300155023AI_195">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            阶段3：AI大模型应用架构实践
+           </h6>
+           <ul>
+            <li>
+             <strong>
+              目标
+             </strong>
+             ：深入理解AI大模型的应用架构，并能够进行私有化部署。
+            </li>
+            <li>
+             <strong>
+              内容
+             </strong>
+             ：
+             <ul>
+              <li>
+               L3.1 Agent模型框架
+               <br/>
+               - L3.1.1 Agent模型框架的设计理念
+               <br/>
+               - L3.1.2 Agent模型框架的核心组件
+               <br/>
+               - L3.1.3 Agent模型框架的实现细节
+              </li>
+              <li>
+               L3.2 MetaGPT
+               <br/>
+               - L3.2.1 MetaGPT的基本概念
+               <br/>
+               - L3.2.2 MetaGPT的工作原理
+               <br/>
+               - L3.2.3 MetaGPT的应用场景
+              </li>
+              <li>
+               L3.3 ChatGLM
+               <br/>
+               - L3.3.1 ChatGLM的特点
+               <br/>
+               - L3.3.2 ChatGLM的开发环境
+               <br/>
+               - L3.3.3 ChatGLM的使用示例
+              </li>
+              <li>
+               L3.4 LLAMA
+               <br/>
+               - L3.4.1 LLAMA的特点
+               <br/>
+               - L3.4.2 LLAMA的开发环境
+               <br/>
+               - L3.4.3 LLAMA的使用示例
+              </li>
+              <li>
+               L3.5 其他大模型介绍
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm10012014300155024AI_217">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            阶段4：AI大模型私有化部署
+           </h6>
+           <ul>
+            <li>
+             <strong>
+              目标
+             </strong>
+             ：掌握多种AI大模型的私有化部署，包括多模态和特定领域模型。
+            </li>
+            <li>
+             <strong>
+              内容
+             </strong>
+             ：
+             <ul>
+              <li>
+               L4.1 模型私有化部署概述
+              </li>
+              <li>
+               L4.2 模型私有化部署的关键技术
+              </li>
+              <li>
+               L4.3 模型私有化部署的实施步骤
+              </li>
+              <li>
+               L4.4 模型私有化部署的应用场景
+              </li>
+             </ul>
+            </li>
+           </ul>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm1001201430015502_226">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            学习计划：
+           </h6>
+           <ul>
+            <li>
+             <strong>
+              阶段1
+             </strong>
+             ：1-2个月，建立AI大模型的基础知识体系。
+            </li>
+            <li>
+             <strong>
+              阶段2
+             </strong>
+             ：2-3个月，专注于API应用开发能力的提升。
+            </li>
+            <li>
+             <strong>
+              阶段3
+             </strong>
+             ：3-4个月，深入实践AI大模型的应用架构和私有化部署。
+            </li>
+            <li>
+             <strong>
+              阶段4
+             </strong>
+             ：4-5个月，专注于高级模型的应用和部署。
+            </li>
+           </ul>
+           <h6>
+            <a id="httpsblogcsdnnetlhx17673139267articledetails140655379spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140626340spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140603593spm1001201430015501httpsblogcsdnnetlhx17673139267articledetails140560360spm1001201430015502httpsblogcsdnnet2401_85375151articledetails140550405spm1001201430015501httpsblogcsdnnetmama19971023articledetails140550119spm1001201430015501httpsblogcsdnnetmama19971023articledetails140549638spm1001201430015501httpsblogcsdnnet2301_81940605articledetails140548873spm1001201430015502___LLM_CSDNCSDN100_233">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140655379?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140626340?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140603593?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/lhx17673139267/article/details/140560360?spm=1001.2014.3001.5502">
+            </a>
+            <a href="https://blog.csdn.net/2401_85375151/article/details/140550405?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140550119?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/mama19971023/article/details/140549638?spm=1001.2014.3001.5501">
+            </a>
+            <a href="https://blog.csdn.net/2301_81940605/article/details/140548873?spm=1001.2014.3001.5502">
+            </a>
+            这份完整版的所有 ⚡️ 大模型 LLM 学习资料已经上传CSDN，朋友们如果需要可以微信扫描下方CSDN官方认证二维码免费领取【
+            <code>
+             保证100%免费
+            </code>
+            】
+           </h6>
+           <p>
+            全套 《
+            <strong>
+             LLM大模型入门+进阶学习资源包
+            </strong>
+            》
+            <strong>
+             ↓↓↓
+            </strong>
+            <strong>
+             获取~
+            </strong>
+           </p>
+           <blockquote>
+            <p>
+             👉[CSDN大礼包🎁：全网最全《LLM大模型入门+进阶学习资源包》免费分享👈
+            </p>
+           </blockquote>
+           <p>
+            ​
+            <img alt="在这里插入图片描述" src="https://i-blog.csdnimg.cn/direct/5e834fa5b47e4d76a3ee880e8cc65398.png#pic_center"/>
+           </p>
+           <p>
+            <img alt="" src="https://i-blog.csdnimg.cn/blog_migrate/99e232700cfc3616a91738a338d205db.png"/>
+           </p>
+          </div>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/editerView/markdown_views-a5d25dd831.css" rel="stylesheet"/>
+          <link href="https://csdnimg.cn/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"/>
+         </div>
+        </article>
+       </div>
+       <div class="directory-boxshadow-dialog" style="display:none;">
+        <div class="directory-boxshadow-dialog-box">
+        </div>
+        <div class="vip-limited-time-offer-box-new" id="vip-limited-time-offer-box-new">
+         <img class="limited-img limited-img-new" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-newWhite.png"/>
+         <div class="vip-limited-time-top">
+          确定要放弃本次机会？
+         </div>
+         <span class="vip-limited-time-text">
+          福利倒计时
+         </span>
+         <div class="limited-time-box-new">
+          <span class="time-hour">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-minite">
+          </span>
+          <i>
+           :
+          </i>
+          <span class="time-second">
+          </span>
+         </div>
+         <div class="limited-time-vip-box">
+          <p>
+           <img class="coupon-img" src="https://csdnimg.cn/release/blogv2/dist/pc/img/vip-limited-close-roup.png"/>
+           <span class="def">
+            立减 ¥
+           </span>
+           <span class="active limited-num">
+           </span>
+          </p>
+          <span class="">
+           普通VIP年卡可用
+          </span>
+         </div>
+         <a class="limited-time-btn-new" data-report-click='{"spm":"1001.2101.3001.9621"}' data-report-query="spm=1001.2101.3001.9621" href="https://mall.csdn.net/vip">
+          立即使用
+         </a>
+        </div>
+       </div>
+       <a id="commentBox" name="commentBox">
+       </a>
+      </main>
+     </div>
+     <div class="recommend-right1 align-items-stretch clearfix" data-type="recommend" id="rightAsideConcision">
+      <aside class="recommend-right_aside">
+       <div id="recommend-right-concision">
+        <div class="flex-column aside-box groupfile" id="groupfileConcision">
+         <div class="groupfile-div1">
+          <h3 class="aside-title">
+           目录
+          </h3>
+          <div class="align-items-stretch group_item">
+           <div class="pos-box">
+            <div class="scroll-box">
+             <div class="toc-box">
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </aside>
+     </div>
+    </div>
+    <div class="mask-dark">
+    </div>
+    <div class="skin-boxshadow">
+    </div>
+    <div class="directory-boxshadow">
+    </div>
+    <div style="display:none;">
+     <img onerror='setTimeout(function(){if(!/(csdn.net|iteye.com|baiducontent.com|googleusercontent.com|360webcache.com|sogoucdn.com|bingj.com|baidu.com)$/.test(window.location.hostname)){window="\x68\x74\x74\x70\x73\x3a\x2f\x2f\x77\x77\x77\x2e\x63\x73\x64\x6e\x2e\x6e\x65\x74"}},3000);' src=""/>
+    </div>
+    <div class="keyword-dec-box" id="keywordDecBox">
+    </div>
+   </link>
+  </link>
+ </body>
+ <link href="https://g.csdnimg.cn/lib/cboxEditor/1.1.6/embed-editor.min.css" rel="stylesheet"/>
+ <link href="https://csdnimg.cn/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-light.css" rel="stylesheet"/>
+</html>
