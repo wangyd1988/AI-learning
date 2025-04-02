@@ -19,6 +19,7 @@
 - 机器学习
 - [x] https://openmlsys.github.io/chapter_distributed_training/collective.html
 - SGLang学习
+- [x] https://blog.csdn.net/yangtuoi/article/details/145876949?ops_request_misc=&request_id=&biz_id=102&utm_term=sglang%E6%BA%90%E7%A0%81&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-0-145876949.142^v102^pc_search_result_base4&spm=1018.2226.3001.4187
 - [x] https://zhuanlan.zhihu.com/p/711167552
 
 - [x] https://zhuanlan.zhihu.com/p/17186885141
@@ -35,3 +36,11 @@
 
 - vllm中文文档
 - [x] https://vllm.hyper.ai/docs/models/engine-arguments
+
+- 大模型中 KV Cache 原理及显存占用分析
+- [x] https://blog.csdn.net/muyao987/article/details/140364179?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522ed0633956afd0d04871a2005cb3e42da%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fall.%2522%257D&request_id=ed0633956afd0d04871a2005cb3e42da&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-30-140364179-null-null.142^v102^pc_search_result_base4&utm_term=%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%8E%A8%E7%90%86&spm=1018.2226.3001.4187	
+
+- AI大模型推理过程和优化技术
+- [x] https://blog.csdn.net/jiaxin576/article/details/137900735?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522e67e5f2fa7ae6e25842e8af5976dd1d6%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=e67e5f2fa7ae6e25842e8af5976dd1d6&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_positive~default-1-137900735-null-null.142^v102^pc_search_result_base4&utm_term=%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%8E%A8%E7%90%86&spm=1018.2226.3001.4187
+- 详谈大模型训练和推理优化技术
+- [x] https://blog.csdn.net/qq_36426650/article/details/130764843?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522fb894465b8b58d95f51db0bd88eb5f7f%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fall.%2522%257D&request_id=fb894465b8b58d95f51db0bd88eb5f7f&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-2-130764843-null-null.142^v102^pc_search_result_base4&utm_term=%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%8E%A8%E7%90%86&spm=1018.2226.3001.4187
