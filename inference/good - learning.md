@@ -1,6 +1,7 @@
+- AI 普及知识
+- [x] https://demo.leemeng.tw/
 - transformer学习地址等
 - [x] https://github.com/yejh123/Transformer
-
 - 深度学习
 - [x] https://paddlepedia.readthedocs.io/en/latest/tutorials/deep_learning/index.html
 - cuda等笔记
