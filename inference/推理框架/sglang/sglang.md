@@ -4,7 +4,7 @@
 - [x] https://docs.sglang.ai/references/deepseek.html
 - sglang支持[request](https://docs.sglang.ai/backend/send_request.html)
 - [x] 支持文本生成
-- [x] 支持视觉语言模型(Vision Language Models)
+- [x] 支持视觉语言模型(Vision Language Models,embedding,图文等)
 - [x] 支持奖励模型(Reward Models)
 - 访问
 ```
@@ -12,12 +12,12 @@ curl -s http://10.236.13.81:35519/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{{"model": "/var/lib/data/aicache/models/system/DeepSeek-R1-Distill-Qwen-7B", "messages": [{{"role": "user", "content": "What is the capital of France?"}}]}}'
 ```
-- 启动参数
+# 启动参数
 ```
 server_args=ServerArgs(model_path='/var/lib/data/aicache/models/system/DeepSeek-R1-Distill-Qwen-7B', tokenizer_path='/var/lib/data/aicache/models/system/DeepSeek-R1-Distill-Qwen-7B', tokenizer_mode='auto', load_format='auto', trust_remote_code=False, dtype='auto', kv_cache_dtype='auto', quantization_param_path=None, quantization=None, context_length=None, device='cuda', served_model_name='/var/lib/data/aicache/models/system/DeepSeek-R1-Distill-Qwen-7B', chat_template=None, is_embedding=False, revision=None, skip_tokenizer_init=False, host='0.0.0.0', port=30000, mem_fraction_static=0.88, max_running_requests=None, max_total_tokens=None, chunked_prefill_size=8192, max_prefill_tokens=16384, schedule_policy='lpm', schedule_conservativeness=1.0, cpu_offload_gb=0, prefill_only_one_req=False, tp_size=1, stream_interval=1, stream_output=False, random_seed=464949377, constrained_json_whitespace_pattern=None, watchdog_timeout=300, download_dir=None, base_gpu_id=0, log_level='info', log_level_http=None, log_requests=False, show_time_cost=False, enable_metrics=False, decode_log_interval=40, api_key=None, file_storage_pth='sglang_storage', enable_cache_report=False, dp_size=1, load_balance_method='round_robin', ep_size=1, dist_init_addr=None, nnodes=1, node_rank=0, json_model_override_args='{}', lora_paths=None, max_loras_per_batch=8, lora_backend='triton', attention_backend='flashinfer', sampling_backend='flashinfer', grammar_backend='outlines', speculative_draft_model_path=None, speculative_algorithm=None, speculative_num_steps=5, speculative_num_draft_tokens=64, speculative_eagle_topk=8, enable_double_sparsity=False, ds_channel_config_path=None, ds_heavy_channel_num=32, ds_heavy_token_num=256, ds_heavy_channel_type='qk', ds_sparse_decode_threshold=4096, disable_radix_cache=False, disable_jump_forward=False, disable_cuda_graph=False, disable_cuda_graph_padding=False, disable_outlines_disk_cache=False, disable_custom_all_reduce=False, disable_mla=False, disable_overlap_schedule=False, enable_mixed_chunk=False, enable_dp_attention=False, enable_ep_moe=False, enable_torch_compile=False, torch_compile_max_bs=32, cuda_graph_max_bs=160, cuda_graph_bs=None, torchao_config='', enable_nan_detection=False, enable_p2p_check=False, triton_attention_reduce_in_fp32=False, triton_attention_num_kv_splits=8, num_continuous_decode_steps=1, delete_ckpt_after_loading=False, enable_memory_saver=False, allow_auto_truncate=False, enable_custom_logit_processor=False, tool_call_parser=None, enable_hierarchical_cache=False)
 ```
 ```
-	[--tokenizer-path TOKENIZER_PATH] [--host HOST]
+[--tokenizer-path TOKENIZER_PATH] [--host HOST]
 	[--port PORT] [--tokenizer-mode {auto,slow}]
 	[--skip-tokenizer-init]
 	[--load-format {auto,pt,safetensors,npcache,dummy,gguf,bitsandbytes,layered}]
@@ -98,7 +98,7 @@ server_args=ServerArgs(model_path='/var/lib/data/aicache/models/system/DeepSeek-
 	[--enable-hierarchical-cache]
 
 ```
-- 聊天参数
+# 聊天参数
 ```
 response = client.chat.completions.create(
     model="meta-llama/Meta-Llama-3.1-8B-Instruct",
@@ -129,11 +129,11 @@ response = client.chat.completions.create(
 
 print_highlight(response.choices[0].message.content)
 ```
-- 将模型转为特定格式
+# 将模型转为特定格式
 ```
 python convert.py --hf-ckpt-path /path/to/DeepSeek-V3 --save-path /path/to/DeepSeek-V3-Demo --n-experts 256 --model-parallel 16
 ```
-- 参数
+# 参数
 1.  --enable-torch-compile：则第一次编译模型torch.compile需要一些时间。你可以参考这里优化编译结果的缓存，这样就可以利用缓存来加快下次启动的速度。
 2. --enable-dp-attention：启用 Distributed Parallel Attention（分布式并行注意力机制） 的参数。
 启用数据并行关注后，与以前的版本相比，我们的解码吞吐量提高了 1.9 倍。此优化旨在提高吞吐量，应用于 QPS（每秒查询数）较高的场景。它可以由 --enable-dp-attention for DeepSeek 模型启用。
@@ -149,9 +149,47 @@ python3 -m sglang.launch_server --model-path deepseek-ai/DeepSeek-V3-0324 --spec
 7. --dist-timeout 3600 :模型加载时间延长，这允许 1 小时的超时。
 8. --context-length: **防止出现OOM**，调整--context-length以避免 GPU 内存不足问题。对于 Scout 型号，我们建议在 8*H100 上将此值设置为最大 1M，在 8*H200 上将此值设置为最大 2.5M。对于 Maverick 模型，我们不需要在 8*H200 上设置上下文长度。
 9. --chat-template： 聊天模板，例如：--chat-template openai ，--chat-template  llama-4
+10. --tp 2 :要启用多 GPU 张量并行，请添加 --tp 2 .如果报错 “not supported peer access between these two devices”，请在服务器启动命令中添加--enable-p2p-check。
+```
+python -m sglang.launch_server --model-path meta-llama/Meta-Llama-3-8B-Instruct --tp 2
 
+```
+11. --dp 2 :要启用多 GPU 数据并行性，请添加 --dp 2 .如果有足够的内存，数据并行性对吞吐量更好。它还可以与张量并行一起使用。以下命令总共使用 4 个 GPU。我们建议使用 SGLang Router 实现数据并行。
+```
+python -m sglang_router.launch_server --model-path meta-llama/Meta-Llama-3-8B-Instruct --dp 2 --tp 2
+```
+12. --mem-fraction-static: 如果您在提供服务期间看到内存不足错误，请尝试通过设置较小的值 --mem-fraction-static .默认值为 0.9 .
+```
+python -m sglang.launch_server --model-path meta-llama/Meta-Llama-3-8B-Instruct --mem-fraction-static 0.7
+```
+13.--shm-size: 对于 docker 和 Kubernetes 运行，您需要设置用于进程之间通信的共享内存。请参阅 --shm-size Kubernetes 清单的 docker 和/dev/shm大小更新。
+14.--chunked-prefill-size: 如果在预填充长提示期间看到内存不足错误，请尝试设置较小的分块预填充大小。
+```
+python -m sglang.launch_server --model-path meta-llama/Meta-Llama-3-8B-Instruct --chunked-prefill-size 4096
+```
+15. --enable-torch-compile :启用torch.compile加速，可加速小批量的小模型。默认情况下，缓存路径位于 /tmp/torchinductor_root,可以使用 环境变量 TORCHINDUCTOR_CACHE_DIR 对其进行自定义。更多细节请参考 PyTorch 官方文档 和 为 torch.compile 启用缓存 。
+16. --torchao-config int4wo-128，启用 torchao 量化
+17. --quantization fp8，启用 fp8 权重量化
+18.	--kv-cache-dtype fp8_e5m2，启用 fp8 kv 缓存量化
+19. --nnodes 2，要在多个节点上运行张量并行，请添加 --nnodes 2 .如果您有两个节点，每个节点上有两个 GPU，并且想要运行TP=4，设sgl-dev-0为第一个节点的主机名并50000成为可用端口，则可以使用以下命令。如果遇到死锁，请尝试添加 --disable-cuda-graph。
+20. load_format ，加载权重的格式。默认为 *.safetensors /*.bin
+21. dtype ，用于模型的 Dtype，默认为 bfloat16
+22. kv_cache_dtype ，kv 缓存的 Dtype 类型，默认为 dtype
+23. revision ，调整是否应使用模型的特定版本。
+24. skip_tokenizer_init，设置为 true 可向引擎提供令牌并直接获取输出令牌，
+25. json_model_override_args，  使用提供的 JSON 覆盖模型配置
+26. delete_ckpt_after_loading， 加载模型后删除模型 checkpoint。
+27. disable_fast_image_processor 采用 base 图像处理器而不是 fast image processor（默认）
+```
+# Node 0
+python -m sglang.launch_server --model-path meta-llama/Meta-Llama-3-8B-Instruct --tp 4 --dist-init-addr sgl-dev-0:50000 --nnodes 2 --node-rank 0
 
-- SGLang 原生 API
+# Node 1
+python -m sglang.launch_server --model-path meta-llama/Meta-Llama-3-8B-Instruct --tp 4 --dist-init-addr sgl-dev-0:50000 --nnodes 2 --node-rank 1
+```
+28. tp_size ：模型权重分片的 GPU 数量。主要是为了节省内存而不是为了高吞吐量，[博客文章](https://pytorch.org/tutorials/intermediate/TP_tutorial.html#how-tensor-parallel-works/)
+
+# SGLang 原生 API
 - [x] /generate (text generation model) /generate （文本生成模型） 
 - [x] /get_model_info
 1. model_path ：模型的路径/名称
@@ -172,5 +210,11 @@ python3 -m sglang.launch_server --model-path deepseek-ai/DeepSeek-V3-0324 --spec
 - [x] /dump_expert_distribution_record
 - [x] /update_weights_from_disk 
 在不重新启动服务器的情况下从磁盘更新模型权重。仅适用于架构和参数大小相同的模型。SGLang 支持update_weights_from_disk用于训练期间持续评估的 API（将检查点保存到磁盘并从磁盘更新权重）。
+
+- 推理模式
+1.非流式同步生成
+2.流式同步生成
+3.非流式异步生成
+4.流式异步生成
 
 
