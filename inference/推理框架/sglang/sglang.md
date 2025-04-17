@@ -10,7 +10,9 @@
 ```
 curl -s http://10.236.13.81:35519/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{{"model": "/var/lib/data/aicache/models/system/DeepSeek-R1-Distill-Qwen-7B", "messages": [{{"role": "user", "content": "What is the capital of France?"}}]}}'
+  -d 'curl -s http://10.68.23.179:35519/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "/var/lib/data/aicache/models/system/DeepSeek-R1-Distill-Qwen-7B", "messages": [{"role": "user", "content": "What is the capital of France?"}]}''
 ```
 # 启动参数
 ```
