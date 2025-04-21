@@ -20,7 +20,9 @@ $$q^i=W^q\a^i$$
 - 在每个Encoder / Decoder block 里头，我们还会使用残差连结（Residual Connection）以及Layer Normalization。这些能帮助模型稳定训练。
 - Decoder 在关注Encoder 输出时会需要遮罩（mask）来避免看到未来资讯。我们后面会看到，事实上还会需要其他遮罩。
 ## transformer快速理解
-<video autoplay="" loop="" muted="" playsinline="" poster="https://leemeng.tw/images/transformer/transformer-nmt-encode-decode.jpg" style="mix-blend-mode: initial;">
 
+<video src="https://leemeng.tw/images/transformer/transformer-nmt-encode-decode.mp4" controls width="600">
+  您的浏览器不支持 HTML5 视频标签。
+</video>
 ## transformer理解视频
 
