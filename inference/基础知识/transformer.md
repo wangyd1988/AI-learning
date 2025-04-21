@@ -6,7 +6,4 @@ RNN很难平行化，
 
 ## transformation也即Q,K,V
 transformation:改观，变化，转变
-```
-$$a^2 + b^2 = c^2$$
-```
-$$a^2 + b^2 = c^2$$
+$$q^i=W^q\,a^i$$
