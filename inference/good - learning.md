@@ -25,10 +25,9 @@
 - 机器学习
 - [x] https://openmlsys.github.io/chapter_distributed_training/collective.html
 - SGLang学习
-- [x] https://blog.csdn.net/yangtuoi/article/details/145876949?ops_request_misc=&request_id=&biz_id=102&utm_term=sglang%E6%BA%90%E7%A0%81&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-0-145876949.142^v102^pc_search_result_base4&spm=1018.2226.3001.4187
+- [x] https://zhuanlan.zhihu.com/p/17186885141
 - [x] https://zhuanlan.zhihu.com/p/711167552
 
-- [x] https://zhuanlan.zhihu.com/p/17186885141
 - [x] https://zhuanlan.zhihu.com/p/21142942282
 - [x] https://zhuanlan.zhihu.com/p/11536619756 
 - [x] https://zhuanlan.zhihu.com/p/31160183506
