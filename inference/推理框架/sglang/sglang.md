@@ -1,3 +1,5 @@
+- 优化
+- [x] https://zhuanlan.zhihu.com/p/18942501855
 - sglang 原理
 - [x] https://zhuanlan.zhihu.com/p/28199298728
 - sglang对deepseek的优化
@@ -33,7 +35,7 @@ server_args=ServerArgs(model_path='/var/lib/data/aicache/models/system/DeepSeek-
 	[--served-model-name SERVED_MODEL_NAME]
 	[--chat-template CHAT_TEMPLATE] [--is-embedding]
 	[--revision REVISION]
-	[--mem-fraction-static MEM_FRACTION_STATIC]
+	[--mem-fraction-static MEM_FRACTION_STATIC] # 设置 KV 缓存池的大小比例，用于优化内存使用。例如 –mem-fraction-static 0.8 表示将 80% 的内存用于 KV 缓存池。
 	[--max-running-requests MAX_RUNNING_REQUESTS]
 	[--max-total-tokens MAX_TOTAL_TOKENS]
 	[--chunked-prefill-size CHUNKED_PREFILL_SIZE]
@@ -84,7 +86,7 @@ server_args=ServerArgs(model_path='/var/lib/data/aicache/models/system/DeepSeek-
 	[--disable-custom-all-reduce] [--disable-mla]
 	[--disable-overlap-schedule] [--enable-mixed-chunk]
 	[--enable-dp-attention] [--enable-ep-moe]
-	[--enable-torch-compile]
+	[--enable-torch-compile]  #启用 PyTorch 的编译优化，加速模型推理
 	[--torch-compile-max-bs TORCH_COMPILE_MAX_BS]
 	[--cuda-graph-max-bs CUDA_GRAPH_MAX_BS]
 	[--cuda-graph-bs CUDA_GRAPH_BS [CUDA_GRAPH_BS ...]]
