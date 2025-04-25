@@ -1,3 +1,12 @@
+- GPU
+- [x] 总 https://www.theriseunion.com/zh/blog/
+- [x] 用户态 vs 内核态虚拟化  https://www.theriseunion.com/blog/GPU-Virtualization-Technology-User-vs-Kernel-Guide.html
+- [x] HAMi https://www.theriseunion.com/blog/HAMi-analyze-device-plugin.html
+            https://www.theriseunion.com/blog/HAMi-support-MIG.html
+			https://www.theriseunion.com/blog/HAMi-Isolation-Test.html
+            https://www.theriseunion.com/blog/HAMi-QA-1.html
+			https://www.theriseunion.com/blog/HAMi-vgpu-intro.html
+			https://www.theriseunion.com/blog/HAMi-vgpu-intro.html
 - AI 普及知识
 - [x] https://demo.leemeng.tw/
 - transformer学习地址等
