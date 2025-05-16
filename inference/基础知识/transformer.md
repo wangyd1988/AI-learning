@@ -39,5 +39,7 @@ $$q^i=W^q\a^i$$
 5. 在自注意力机制后，Decoder 接着利用注意力机制关注Encoder 的所有输出并将其资讯纳入当前生成元素的repr.
 6. Decoder 重复步骤4, 5 以让当前元素完整包含整体语义
 
-## transformer理解视频
+## 魔搭讲解transfomer
+![image](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2018/9/17/165e5814fae0765f~tplv-t2oaga2asx-jj-mark:3024:0:0:0:q75.awebp)
 
+![image](https://github.com/wangyd1988/AI-learning/blob/main/images/transformer-modelscope.png)
