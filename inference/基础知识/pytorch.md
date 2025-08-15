@@ -93,6 +93,12 @@ tensor([0., 1., 2., 3.])
 3. torch.kthvalue(input,k,dim=None,out=None)#沿着指定维度返回第K个最小值及及其索引值
 其中1,2主要在训练时loss的hard值
 
+## 有界，无界，nil,判断
+torch.isfinite(tensor)/torch.isinf(tensor)/torch.isnan(tensor)
+
+## Tensor的裁剪运算
+
+
 # Pytorch广播机制
 - 广播机制：张量参数可以自动扩展为相同大小
 - 必须满足至少两个条件：
